@@ -15,6 +15,11 @@ export const metadata: Metadata = {
 
 const QUICK_LINKS = [
   {
+    href: "/admin/kebutuhan",
+    title: "Tinjau kebutuhan lowongan",
+    description: "Setujui inquiry perusahaan sebelum lowongan tampil publik.",
+  },
+  {
     href: "/admin/pencari-kerja",
     title: "Data pencari kerja",
     description: "Tinjau profil dan kelengkapan pencari kerja.",
@@ -48,8 +53,8 @@ export default async function AdminDashboardPage() {
           Ringkasan
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
-          Kelola data pencari kerja dan perusahaan, lalu salurkan kandidat.
-          Pencari kerja tidak melamar langsung ke lowongan.
+          Kelola data pencari kerja dan perusahaan, tinjau kebutuhan lowongan,
+          lalu salurkan kandidat. Pencari kerja tidak melamar langsung.
         </p>
         <PageActions>
           <PageActionLink href="/admin/penyaluran" variant="default">
