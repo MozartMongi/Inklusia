@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   description:
     "Portal kerja ramah disabilitas. Inklusia menghubungkan pencari kerja dengan perusahaan inklusif melalui lowongan, pelatihan, dan penyaluran.",
+  icons: {
+    icon: "/images/inklusia-mark.png",
+    apple: "/images/inklusia-mark.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
