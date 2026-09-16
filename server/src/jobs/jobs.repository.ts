@@ -7,6 +7,12 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, "\\$&");
 }
 
+/**
+ * Syarat tayang publik: lowongan sudah disetujui admin DAN masih aktif.
+ * Semua query publik harus memakai klausa ini.
+ */
+const PUBLISHED_JOB_CONDITION = `j.status = 'disetujui' AND j.is_active = TRUE`;
+
 export async function listActiveJobs(
   filters: JobListFilters,
 ): Promise<JobListing[]> {
@@ -30,7 +36,7 @@ export async function listActiveJobs(
       c.address
     FROM jobs j
     INNER JOIN company_profiles c ON c.id = j.company_id
-    WHERE j.is_active = TRUE
+    WHERE ${PUBLISHED_JOB_CONDITION}
       AND (
         $1 = ''
         OR j.title ILIKE $1 ESCAPE '\\'
@@ -54,9 +60,9 @@ export async function listActiveJobs(
 export async function listActiveJobLocations(): Promise<string[]> {
   const { rows } = await pool.query<{ location: string }>(
     `
-    SELECT DISTINCT location
-    FROM jobs
-    WHERE is_active = TRUE
+    SELECT DISTINCT j.location
+    FROM jobs j
+    WHERE ${PUBLISHED_JOB_CONDITION}
     `,
   );
 
@@ -94,7 +100,7 @@ export async function findActiveJobById(
   const { rows } = await pool.query<JobListRow>(
     `
     ${JOB_WITH_COMPANY_SELECT}
-    WHERE j.id = $1 AND j.is_active = TRUE
+    WHERE j.id = $1 AND ${PUBLISHED_JOB_CONDITION}
     LIMIT 1
     `,
     [id],
@@ -102,4 +108,17 @@ export async function findActiveJobById(
 
   const row = rows[0];
   return row ? mapJobRow(row) : null;
+}
+
+/** Dipakai admin penyaluran: hanya lowongan yang benar-benar tayang. */
+export async function listPublishedJobsForPlacement(): Promise<JobListing[]> {
+  const { rows } = await pool.query<JobListRow>(
+    `
+    ${JOB_WITH_COMPANY_SELECT}
+    WHERE ${PUBLISHED_JOB_CONDITION}
+    ORDER BY j.created_at DESC
+    `,
+  );
+
+  return rows.map(mapJobRow);
 }
