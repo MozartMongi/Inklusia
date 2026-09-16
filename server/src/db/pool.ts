@@ -26,4 +26,35 @@ if (!configuredJwtSecret && process.env.NODE_ENV === "production") {
 
 export const jwtSecret: string =
   configuredJwtSecret ?? "dev-inklusia-local-jwt-secret-change-me";
-export const pool = new pg.Pool({ connectionString: databaseUrl });
+
+function sslForDatabaseUrl(url: string): boolean | { rejectUnauthorized: boolean } | undefined {
+  try {
+    const parsed = new URL(url);
+    const sslMode = parsed.searchParams.get("sslmode");
+    const hostname = parsed.hostname;
+    const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (sslMode === "disable" || isLocal) {
+      return undefined;
+    }
+
+    if (
+      sslMode === "require" ||
+      sslMode === "no-verify" ||
+      hostname.endsWith(".railway.app") ||
+      hostname.endsWith(".rlwy.net") ||
+      hostname.endsWith(".railway.internal")
+    ) {
+      return { rejectUnauthorized: false };
+    }
+
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export const pool = new pg.Pool({
+  connectionString: databaseUrl,
+  ssl: sslForDatabaseUrl(databaseUrl),
+});
