@@ -14,7 +14,7 @@ export default function NotFound() {
         Lowongan atau halaman yang Anda cari tidak tersedia.
       </p>
       <p className="mt-6 flex justify-center">
-        <PageActionLink href="/" tone="back">
+        <PageActionLink href="/lowongan" tone="back">
           Kembali ke daftar lowongan
         </PageActionLink>
       </p>
