@@ -36,7 +36,7 @@ export function JobSearchForm({ filters, locations }: JobSearchFormProps) {
     }
 
     const query = params.toString();
-    router.push(query ? `/?${query}` : "/");
+    router.push(query ? `/lowongan?${query}` : "/lowongan");
     window.setTimeout(() => {
       document.getElementById("hasil-pencarian")?.focus();
     }, 50);
@@ -45,7 +45,7 @@ export function JobSearchForm({ filters, locations }: JobSearchFormProps) {
   return (
     <form
       method="get"
-      action="/"
+      action="/lowongan"
       onSubmit={handleSubmit}
       className="border-border bg-card mb-6 rounded-xl border p-4 sm:p-5"
       aria-label="Cari dan saring lowongan"
@@ -124,7 +124,7 @@ export function JobSearchForm({ filters, locations }: JobSearchFormProps) {
         </button>
         {hasActiveFilters(filters) ? (
           <Link
-            href="/"
+            href="/lowongan"
             className={buttonVariants({
               variant: "outline",
               size: "lg",
