@@ -25,7 +25,7 @@ export function AdminAccessDenied({ role }: AdminAccessDeniedProps) {
       </p>
       <p className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Link
-          href="/"
+          href="/lowongan"
           className={buttonVariants({
             variant: "outline",
             size: "lg",
