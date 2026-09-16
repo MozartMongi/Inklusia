@@ -1,6 +1,6 @@
 import { app } from "./app.js";
 import { port } from "./db/pool.js";
 
-app.listen(port, () => {
-  console.log(`API Inklusia berjalan di http://localhost:${port}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`API Inklusia berjalan di port ${port}`);
 });
