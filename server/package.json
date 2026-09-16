@@ -5,11 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
-    "migrate": "tsx src/db/migrate.ts",
-    "seed": "tsx src/db/seed.ts",
-    "seed:root-admin": "tsx src/db/seed-root-admin.ts",
-    "seed:trainings": "tsx src/db/seed-trainings.ts"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "migrate": "node dist/db/migrate.js",
+    "migrate:dev": "tsx src/db/migrate.ts",
+    "seed": "node dist/db/seed.js",
+    "seed:dev": "tsx src/db/seed.ts",
+    "seed:root-admin": "node dist/db/seed-root-admin.js",
+    "seed:root-admin:dev": "tsx src/db/seed-root-admin.ts",
+    "seed:trainings": "node dist/db/seed-trainings.js",
+    "seed:trainings:dev": "tsx src/db/seed-trainings.ts"
+  },
+  "engines": {
+    "node": "22.x"
   },
   "dependencies": {
     "cors": "^2.8.5",
