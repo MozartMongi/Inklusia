@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "npm run migrate --prefix server",
-    "db:seed": "npm run seed --prefix server",
-    "db:seed:root-admin": "npm run seed:root-admin --prefix server",
-    "db:seed:trainings": "npm run seed:trainings --prefix server",
+    "db:migrate": "npm run migrate:dev --prefix server",
+    "db:seed": "npm run seed:dev --prefix server",
+    "db:seed:root-admin": "npm run seed:root-admin:dev --prefix server",
+    "db:seed:trainings": "npm run seed:trainings:dev --prefix server",
     "api:dev": "npm run dev --prefix server"
   },
   "dependencies": {
