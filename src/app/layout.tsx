@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s · Inklusia",
   },
   description:
-    "Temukan lowongan kerja ramah disabilitas. Inklusia menghubungkan pencari kerja dengan perusahaan inklusif.",
+    "Portal kerja ramah disabilitas. Inklusia menghubungkan pencari kerja dengan perusahaan inklusif melalui lowongan, pelatihan, dan penyaluran.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
