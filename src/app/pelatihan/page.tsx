@@ -12,17 +12,8 @@ export const metadata: Metadata = {
     "Daftar pelatihan untuk menambah keahlian yang dicari perusahaan inklusif.",
 };
 
-type TrainingsPageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
-
-export default async function TrainingsPage({
-  searchParams,
-}: TrainingsPageProps) {
-  const params = await searchParams;
-  const forceEmpty =
-    (Array.isArray(params.kosong) ? params.kosong[0] : params.kosong) === "1";
-  const trainings = forceEmpty ? [] : await fetchTrainings();
+export default async function TrainingsPage() {
+  const { trainings, unavailable } = await fetchTrainings();
 
   return (
     <main
@@ -39,7 +30,7 @@ export default async function TrainingsPage({
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
           Ikuti pelatihan untuk memperkuat keterampilan yang sering dicari
-          perusahaan. Data di halaman ini masih memakai contoh tiruan.
+          perusahaan inklusif.
         </p>
         <PageActions>
           <PageActionLink href="/pelatihan/saya">
@@ -60,10 +51,12 @@ export default async function TrainingsPage({
             Daftar pelatihan
           </h2>
           <p className="text-muted-foreground text-sm" aria-live="polite">
-            {trainings.length} pelatihan ditampilkan
+            {unavailable
+              ? "Data pelatihan belum dapat dimuat"
+              : `${trainings.length} pelatihan ditampilkan`}
           </p>
         </div>
-        <TrainingList trainings={trainings} />
+        <TrainingList trainings={trainings} unavailable={unavailable} />
       </section>
     </main>
   );
