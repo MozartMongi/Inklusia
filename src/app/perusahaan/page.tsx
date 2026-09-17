@@ -30,8 +30,8 @@ export default async function CompanySpacePage() {
           Profil perusahaan
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
-          Data ini memakai profil tiruan {profile.name}. Perusahaan tidak
-          menerima lamaran langsung; admin yang menyalurkan kandidat.
+          Data perusahaan {profile.name}. Perusahaan tidak menerima lamaran
+          langsung; admin yang menyalurkan kandidat.
         </p>
         <PageActions>
           <PageActionLink href="/perusahaan/edit">
