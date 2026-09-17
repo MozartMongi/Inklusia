@@ -92,6 +92,7 @@ export async function registerJobSeekerAccount(
       user: {
         id: userRow.id,
         email: userRow.email,
+        fullName: input.fullName.trim(),
         role: "job_seeker",
         isRootAdmin: userRow.is_root_admin,
         status: "aktif",
