@@ -26,8 +26,7 @@ export default function ForgotPasswordPage() {
           Lupa kata sandi
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
-          Kami akan mengirim tautan reset ke email akun Anda. Proses masih
-          simulasi sampai API siap.
+          Kami akan mengirim tautan reset ke email akun Anda.
         </p>
       </div>
       <ForgotPasswordForm />
