@@ -3,7 +3,8 @@ export type JobSeekerDisabilityType =
   | "daksa"
   | "netra"
   | "autisme"
-  | "intelektual";
+  | "intelektual"
+  | "lainnya";
 
 export type SkillLevel = "dasar" | "menengah" | "mahir";
 
@@ -57,6 +58,7 @@ export const JOB_SEEKER_DISABILITY_LABEL: Record<
   netra: "Netra / low vision",
   autisme: "Autisme / neurodiversitas",
   intelektual: "Disabilitas intelektual",
+  lainnya: "Disabilitas lainnya",
 };
 
 export const SKILL_LEVEL_LABEL: Record<SkillLevel, string> = {
