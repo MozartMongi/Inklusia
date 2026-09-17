@@ -13,6 +13,7 @@ export type CompanyProfileRow = {
   contact_person_position: string;
   contact_person_phone: string;
   contact_person_email: string;
+  inclusion_message?: string;
   created_at: Date;
   updated_at: Date;
 };
@@ -30,6 +31,7 @@ export type CompanyProfile = {
     phone: string;
     email: string;
   };
+  inclusionMessage: string;
   updatedAt: string;
 };
 
@@ -46,6 +48,7 @@ export function mapCompanyProfileRow(row: CompanyProfileRow): CompanyProfile {
       phone: row.contact_person_phone,
       email: row.contact_person_email,
     },
+    inclusionMessage: row.inclusion_message?.trim() ?? "",
     updatedAt: row.updated_at.toISOString(),
   };
 }
