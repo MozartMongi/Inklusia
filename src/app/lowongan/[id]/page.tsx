@@ -3,7 +3,6 @@ import { PageActionLink } from "@/components/layout/page-action-link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { fetchJobById } from "@/lib/api/jobs";
-import { MOCK_JOBS } from "@/lib/mock/jobs";
 import {
   DISABILITY_FRIENDLY_LABEL,
   JOB_TYPE_LABEL,
@@ -16,12 +15,6 @@ import { notFound } from "next/navigation";
 type JobDetailPageProps = {
   params: Promise<{ id: string }>;
 };
-
-export function generateStaticParams() {
-  return MOCK_JOBS.filter((job) => job.isActive).map((job) => ({
-    id: job.id,
-  }));
-}
 
 export async function generateMetadata({
   params,
