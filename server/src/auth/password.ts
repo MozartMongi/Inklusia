@@ -2,6 +2,10 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const SCRYPT_KEYLEN = 64;
 
+export const MIN_PASSWORD_LENGTH = 8;
+/** scrypt berbanding lurus dengan panjang input, jadi batasi agar tidak jadi vektor DoS. */
+export const MAX_PASSWORD_LENGTH = 128;
+
 /** Format: scrypt$saltHex$hashHex */
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -13,26 +17,20 @@ export function verifyPassword(
   password: string,
   stored: string,
 ): boolean {
-  if (!stored) {
+  if (!stored || password.length > MAX_PASSWORD_LENGTH) {
     return false;
   }
 
-  if (stored.startsWith("scrypt$")) {
-    const [, salt, expectedHex] = stored.split("$");
-    if (!salt || !expectedHex) {
-      return false;
-    }
-    const actual = scryptSync(password, salt, SCRYPT_KEYLEN);
-    const expected = Buffer.from(expectedHex, "hex");
-    return (
-      actual.length === expected.length && timingSafeEqual(actual, expected)
-    );
+  if (!stored.startsWith("scrypt$")) {
+    return false;
   }
 
-  // Seed lama memakai string polos "seed" — hanya cocok untuk data contoh lokal.
-  if (stored === "seed") {
-    return password === "seed";
+  const [, salt, expectedHex] = stored.split("$");
+  if (!salt || !expectedHex) {
+    return false;
   }
 
-  return false;
+  const actual = scryptSync(password, salt, SCRYPT_KEYLEN);
+  const expected = Buffer.from(expectedHex, "hex");
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
