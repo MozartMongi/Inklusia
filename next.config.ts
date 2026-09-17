@@ -1,9 +1,17 @@
 import type { NextConfig } from "next";
 
-const apiBase = (process.env.API_BASE_URL ?? "http://localhost:4000").replace(
-  /\/$/,
-  "",
-);
+function normalizeApiBase(raw: string | undefined): string {
+  let value = (raw ?? "http://localhost:4000").trim().replace(/\/$/, "");
+  if (!/^https?:\/\//i.test(value)) {
+    value =
+      value.startsWith("localhost") || value.startsWith("127.")
+        ? `http://${value}`
+        : `https://${value}`;
+  }
+  return value;
+}
+
+const apiBase = normalizeApiBase(process.env.API_BASE_URL);
 
 let apiUrl: URL | null = null;
 try {
