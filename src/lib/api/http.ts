@@ -27,7 +27,12 @@ function apiOrigin(): string {
 
   const configured = process.env.API_BASE_URL?.trim().replace(/\/$/, "");
   if (configured) {
-    return configured;
+    if (/^https?:\/\//i.test(configured)) {
+      return configured;
+    }
+    return configured.startsWith("localhost") || configured.startsWith("127.")
+      ? `http://${configured}`
+      : `https://${configured}`;
   }
 
   if (process.env.NODE_ENV === "production") {
