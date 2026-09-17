@@ -3,6 +3,7 @@
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { RegisterCta } from "@/components/jobs/register-cta";
 import type { UserRole } from "@/lib/types/auth";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -94,7 +95,7 @@ export function SiteNav({ role }: SiteNavProps) {
         <Link
           href="/masuk"
           aria-current={onSignIn ? "page" : undefined}
-          className={navLinkClassName}
+          className={cn(navLinkClassName, "font-bold text-[#004a3c]")}
         >
           Masuk
         </Link>
