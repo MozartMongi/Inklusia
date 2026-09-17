@@ -7,7 +7,6 @@ import {
   fetchMyTrainingEnrollments,
   fetchTrainingById,
 } from "@/lib/api/trainings";
-import { MOCK_TRAININGS } from "@/lib/mock/trainings";
 import { TRAINING_FORMAT_LABEL } from "@/lib/types/training";
 import {
   Accessibility,
@@ -30,10 +29,6 @@ function formatStartDate(iso: string): string {
     month: "long",
     year: "numeric",
   }).format(new Date(iso));
-}
-
-export function generateStaticParams() {
-  return MOCK_TRAININGS.map((training) => ({ id: training.id }));
 }
 
 export async function generateMetadata({
@@ -169,8 +164,8 @@ export default async function TrainingDetailPage({
 
         <aside className="border-border bg-card rounded-xl border p-4 sm:p-5">
           <p className="text-foreground text-base leading-7">
-            Pendaftaran masih memakai data tiruan. Setelah mendaftar, Anda
-            dapat memantau status di halaman Pelatihan saya.
+            Pendaftaran tersimpan ke akun Anda. Setelah terdaftar, Anda dapat
+            memantau status di halaman Pelatihan saya.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <EnrollTrainingButton
