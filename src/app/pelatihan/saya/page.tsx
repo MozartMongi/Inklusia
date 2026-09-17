@@ -12,29 +12,18 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pelatihan saya",
   description:
-    "Pantau pelatihan yang sudah Anda ikuti atau daftarkan (data tiruan).",
+    "Pantau pelatihan yang sudah Anda ikuti atau daftarkan.",
 };
 
-type MyTrainingsPageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
-
-export default async function MyTrainingsPage({
-  searchParams,
-}: MyTrainingsPageProps) {
-  const params = await searchParams;
-  const forceEmpty =
-    (Array.isArray(params.kosong) ? params.kosong[0] : params.kosong) === "1";
-  const [enrollments, trainings] = await Promise.all([
-    forceEmpty
-      ? Promise.resolve([])
-      : fetchMyTrainingEnrollments(),
+export default async function MyTrainingsPage() {
+  const [enrollments, catalog] = await Promise.all([
+    fetchMyTrainingEnrollments(),
     fetchTrainings(),
   ]);
 
   const items = enrollments
     .map((enrollment) => {
-      const training = trainings.find(
+      const training = catalog.trainings.find(
         (item) => item.id === enrollment.trainingId,
       );
       if (!training) {
@@ -58,8 +47,8 @@ export default async function MyTrainingsPage({
           Pelatihan saya
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
-          Ringkasan pendaftaran pelatihan Anda memakai data tiruan. Status
-          diperbarui setelah Anda mendaftar dari detail pelatihan.
+          Ringkasan pendaftaran pelatihan Anda. Status diperbarui setelah Anda
+          mendaftar dari detail pelatihan.
         </p>
         <PageActions>
           <PageActionLink href="/pelatihan" variant="default">
