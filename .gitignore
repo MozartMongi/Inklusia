@@ -32,6 +32,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# secrets
+.env
+.env.local
+.env.*.local
+server/.env
+
 # uploaded profile photos
 /server/uploads/
 
