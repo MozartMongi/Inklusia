@@ -3,13 +3,15 @@ import type { NextFunction, Request, Response } from "express";
 import {
   authUser,
   requireAuth,
-  requireAdmin,
-  requireRootAdmin,
-  requireCompany,
   requireJobSeeker,
 } from "./middleware.js";
+import {
+  authLimiter,
+  registerLimiter,
+  uploadLimiter,
+} from "../http/rate-limit.js";
 import { signAccessToken } from "./jwt.js";
-import { verifyPassword } from "./password.js";
+import { MAX_PASSWORD_LENGTH, verifyPassword } from "./password.js";
 import { registerCompanyAccount } from "./register-company.service.js";
 import {
   parseRegisterCompanyBody,
@@ -40,7 +42,7 @@ import type { JobSeekerPhotoKind } from "../db/job-seeker-schema.js";
 
 export const authRouter = Router();
 
-authRouter.post("/register/pencari-kerja", async (req, res, next) => {
+authRouter.post("/register/pencari-kerja", registerLimiter, async (req, res, next) => {
   try {
     const { values } = parseRegisterSeekerBody(req.body);
     const errors = validateRegisterSeekerInput(values);
@@ -85,7 +87,7 @@ authRouter.post("/register/pencari-kerja", async (req, res, next) => {
   }
 });
 
-authRouter.post("/register/perusahaan", async (req, res, next) => {
+authRouter.post("/register/perusahaan", registerLimiter, async (req, res, next) => {
   try {
     const { values } = parseRegisterCompanyBody(req.body);
     const errors = validateRegisterCompanyInput(values);
@@ -140,7 +142,7 @@ authRouter.post("/register/perusahaan", async (req, res, next) => {
   }
 });
 
-authRouter.post("/login", async (req, res, next) => {
+authRouter.post("/login", authLimiter, async (req, res, next) => {
   try {
     const body =
       req.body && typeof req.body === "object"
@@ -157,6 +159,12 @@ authRouter.post("/login", async (req, res, next) => {
           password: !password ? "Kata sandi wajib diisi." : undefined,
         },
       });
+      return;
+    }
+
+    // Input di luar batas wajar ditolak sebelum menyentuh scrypt/database.
+    if (email.length > 254 || password.length > MAX_PASSWORD_LENGTH) {
+      res.status(401).json({ error: "Email atau kata sandi tidak sesuai." });
       return;
     }
 
@@ -189,50 +197,22 @@ authRouter.post("/logout", requireAuth, (_req, res) => {
   res.json({ data: { ok: true } });
 });
 
+/** Sumber kebenaran sesi untuk frontend: peran selalu dibaca ulang dari database. */
 authRouter.get("/me", requireAuth, (req, res) => {
   const user = authUser(req);
   res.json({
     data: {
       id: user.id,
       email: user.email,
+      fullName: user.fullName,
       role: toApiRole(user.role),
+      isRootAdmin: user.isRootAdmin,
       redirectTo: redirectPathForRole(user.role),
     },
   });
 });
 
-/** Endpoint uji proteksi peran (dokumentasi kontrak). */
-authRouter.get("/guard/pencari-kerja", requireAuth, requireJobSeeker, (_req, res) => {
-  res.json({ data: { ok: true, role: "pencari_kerja" } });
-});
-
-authRouter.get("/guard/perusahaan", requireAuth, requireCompany, (_req, res) => {
-  res.json({ data: { ok: true, role: "perusahaan" } });
-});
-
-authRouter.get("/guard/admin", requireAuth, requireAdmin, (req, res) => {
-  const user = authUser(req);
-  res.json({
-    data: {
-      ok: true,
-      role: "admin",
-      isRootAdmin: user.isRootAdmin,
-    },
-  });
-});
-
-authRouter.get("/guard/root-admin", requireAuth, requireRootAdmin, (req, res) => {
-  const user = authUser(req);
-  res.json({
-    data: {
-      ok: true,
-      role: "admin",
-      isRootAdmin: user.isRootAdmin,
-    },
-  });
-});
-
-authRouter.post("/lupa-kata-sandi", async (req, res, next) => {
+authRouter.post("/lupa-kata-sandi", authLimiter, async (req, res, next) => {
   try {
     const body =
       req.body && typeof req.body === "object"
@@ -247,19 +227,14 @@ authRouter.post("/lupa-kata-sandi", async (req, res, next) => {
       return;
     }
 
-    const result = await requestPasswordReset(email);
-    res.json({
-      data: {
-        sent: true as const,
-        ...(result.debugToken ? { debugToken: result.debugToken } : {}),
-      },
-    });
+    await requestPasswordReset(email);
+    res.json({ data: { sent: true as const } });
   } catch (error) {
     next(error);
   }
 });
 
-authRouter.post("/reset-kata-sandi", async (req, res, next) => {
+authRouter.post("/reset-kata-sandi", authLimiter, async (req, res, next) => {
   try {
     const body =
       req.body && typeof req.body === "object"
@@ -282,6 +257,7 @@ authRouter.post("/reset-kata-sandi", async (req, res, next) => {
 
 authRouter.post(
   "/unggah/foto-diri",
+  uploadLimiter,
   requireAuth,
   requireJobSeeker,
   handleProfileImageUpload,
@@ -292,6 +268,7 @@ authRouter.post(
 
 authRouter.post(
   "/unggah/foto-ktp",
+  uploadLimiter,
   requireAuth,
   requireJobSeeker,
   handleProfileImageUpload,
