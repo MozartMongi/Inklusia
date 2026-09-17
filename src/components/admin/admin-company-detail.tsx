@@ -25,6 +25,7 @@ export function AdminCompanyDetail({
   profile,
   inquiries,
 }: AdminCompanyDetailProps) {
+  const inclusionMessage = profile.inclusionMessage?.trim() ?? "";
   const approvedCount = inquiries.filter(
     (inquiry) => inquiry.status === "disetujui",
   ).length;
@@ -112,6 +113,31 @@ export function AdminCompanyDetail({
           </CardContent>
         </Card>
       </section>
+
+      {inclusionMessage ? (
+        <section aria-labelledby="pesan-inklusi-heading">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold">
+                <h2
+                  id="pesan-inklusi-heading"
+                  className="text-xl font-semibold"
+                >
+                  Pesan yang ingin disampaikan
+                </h2>
+              </CardTitle>
+              <CardDescription>
+                Catatan dari perusahaan saat mendaftar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-foreground text-base leading-7 whitespace-pre-wrap">
+                {inclusionMessage}
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+      ) : null}
 
       <section aria-labelledby="inquiry-heading">
         <Card>
