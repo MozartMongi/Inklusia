@@ -12,9 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerCompany } from "@/lib/api/auth";
 import {
+  COMPANY_PROFILE_FILE_ACCEPT,
+  MAX_COMPANY_PROFILE_FILE_BYTES,
+  normalizeCompanyWebsite,
+  validateCompanyProfileFile,
+} from "@/lib/auth/company-profile-document";
+import {
   EMPTY_REGISTER_COMPANY_VALUES,
   firstRegisterCompanyErrorField,
+  MAX_INCLUSION_MESSAGE_LENGTH,
   validateRegisterCompanyForm,
+  type CompanyProfileKind,
   type RegisterCompanyFormErrors,
   type RegisterCompanyFormValues,
   type YesNoAnswer,
@@ -24,6 +32,19 @@ import { useId, useState, type FormEvent } from "react";
 
 const fieldClassName =
   "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 min-h-11 w-full rounded-lg border px-3 text-base outline-none focus-visible:ring-3 md:text-sm";
+
+function focusField(
+  formId: string,
+  field: keyof RegisterCompanyFormValues,
+) {
+  const focusId =
+    field === "hasDisabilityEmployees" || field === "hasCsrOrGrant"
+      ? `${formId}-${field}-ya`
+      : field === "profileKind"
+        ? `${formId}-profileKind-file`
+        : `${formId}-${field}`;
+  document.getElementById(focusId)?.focus();
+}
 
 export function CompanyRegisterForm() {
   const formId = useId();
@@ -42,6 +63,12 @@ export function CompanyRegisterForm() {
       if (field === "hasDisabilityEmployees" && value === "ya") {
         next.disabilityHirePlan = "";
       }
+      if (field === "profileKind" && value === "website") {
+        next.profileFile = null;
+      }
+      if (field === "profileKind" && value === "file") {
+        next.profileWebsite = "";
+      }
       return next;
     });
     setStatus("idle");
@@ -50,8 +77,31 @@ export function CompanyRegisterForm() {
       if (field === "hasDisabilityEmployees" && value === "ya") {
         next.disabilityHirePlan = undefined;
       }
+      if (field === "profileKind" && value === "website") {
+        next.profileFile = undefined;
+      }
+      if (field === "profileKind" && value === "file") {
+        next.profileWebsite = undefined;
+      }
       return next;
     });
+  }
+
+  function handleProfileFile(file: File | undefined) {
+    setStatus("idle");
+    if (!file) {
+      update("profileFile", null);
+      return;
+    }
+    const fileError = validateCompanyProfileFile(file);
+    setValues((current) => ({
+      ...current,
+      profileFile: fileError ? null : file,
+    }));
+    setErrors((current) => ({
+      ...current,
+      profileFile: fileError ?? undefined,
+    }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -61,12 +111,7 @@ export function CompanyRegisterForm() {
 
     const firstField = firstRegisterCompanyErrorField(nextErrors);
     if (firstField) {
-      const focusId =
-        firstField === "hasDisabilityEmployees" ||
-        firstField === "hasCsrOrGrant"
-          ? `${formId}-${firstField}-ya`
-          : `${formId}-${firstField}`;
-      document.getElementById(focusId)?.focus();
+      focusField(formId, firstField);
       return;
     }
 
@@ -74,6 +119,12 @@ export function CompanyRegisterForm() {
       name: values.name.trim(),
       address: values.address.trim(),
       industry: values.industry.trim(),
+      profileKind: values.profileKind as CompanyProfileKind,
+      profileWebsite:
+        values.profileKind === "website"
+          ? normalizeCompanyWebsite(values.profileWebsite)
+          : "",
+      profileFile: values.profileKind === "file" ? values.profileFile : null,
       contactName: values.contactName.trim(),
       contactPosition: values.contactPosition.trim(),
       contactPhone: values.contactPhone.trim(),
@@ -87,13 +138,14 @@ export function CompanyRegisterForm() {
           ? values.disabilityHirePlan.trim()
           : null,
       hasCsrOrGrant: values.hasCsrOrGrant as YesNoAnswer,
+      inclusionMessage: values.inclusionMessage.trim(),
     });
     if ("error" in result) {
-      setErrors((current) => ({
-        ...current,
-        contactEmail: result.errors?.contactEmail ?? result.error,
-      }));
-      document.getElementById(`${formId}-contactEmail`)?.focus();
+      const apiErrors = result.errors ?? { contactEmail: result.error };
+      setErrors((current) => ({ ...current, ...apiErrors }));
+      const errorField =
+        firstRegisterCompanyErrorField(apiErrors) ?? "contactEmail";
+      focusField(formId, errorField);
       return;
     }
     setStatus("saved");
@@ -163,6 +215,128 @@ export function CompanyRegisterForm() {
               className="min-h-11"
             />
           </Field>
+          <fieldset
+            className="flex flex-col gap-3"
+            aria-describedby={
+              errors.profileKind
+                ? `${formId}-profileKind-error`
+                : `${formId}-profile-hint`
+            }
+            aria-invalid={errors.profileKind ? true : undefined}
+          >
+            <legend className="text-sm font-medium">
+              Profil perusahaan{" "}
+              <span aria-hidden="true" className="text-destructive">
+                *
+              </span>
+              <span className="sr-only"> (wajib)</span>
+            </legend>
+            <p id={`${formId}-profile-hint`} className="text-muted-foreground text-sm">
+              Unggah berkas profil atau isi tautan website perusahaan.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  id={`${formId}-profileKind-file`}
+                  type="radio"
+                  name="profileKind"
+                  value="file"
+                  checked={values.profileKind === "file"}
+                  onChange={() => update("profileKind", "file")}
+                  className="size-4"
+                  required
+                />
+                Unggah berkas
+              </label>
+              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  id={`${formId}-profileKind-website`}
+                  type="radio"
+                  name="profileKind"
+                  value="website"
+                  checked={values.profileKind === "website"}
+                  onChange={() => update("profileKind", "website")}
+                  className="size-4"
+                />
+                Website perusahaan
+              </label>
+            </div>
+            <span id={`${formId}-profileKind`} className="sr-only" tabIndex={-1} />
+            {errors.profileKind ? (
+              <p
+                id={`${formId}-profileKind-error`}
+                className="text-destructive text-sm"
+                role="alert"
+              >
+                {errors.profileKind}
+              </p>
+            ) : null}
+            {values.profileKind === "file" ? (
+              <Field
+                id={`${formId}-profileFile`}
+                label="Berkas profil"
+                error={errors.profileFile}
+              >
+                <input
+                  id={`${formId}-profileFile`}
+                  name="profileFile"
+                  type="file"
+                  accept={COMPANY_PROFILE_FILE_ACCEPT}
+                  required
+                  aria-required="true"
+                  aria-invalid={errors.profileFile ? true : undefined}
+                  aria-describedby={
+                    errors.profileFile
+                      ? `${formId}-profileFile-error`
+                      : `${formId}-profileFile-hint`
+                  }
+                  onChange={(event) =>
+                    handleProfileFile(event.target.files?.[0])
+                  }
+                  className="border-input bg-background min-h-11 w-full rounded-lg border px-3 py-2 text-sm"
+                />
+                <p
+                  id={`${formId}-profileFile-hint`}
+                  className="text-muted-foreground text-sm"
+                >
+                  PDF, Word, JPG, PNG, atau WebP. Maksimal{" "}
+                  {MAX_COMPANY_PROFILE_FILE_BYTES / (1024 * 1024)} MB.
+                  {values.profileFile
+                    ? ` Berkas: ${values.profileFile.name}`
+                    : ""}
+                </p>
+              </Field>
+            ) : null}
+            {values.profileKind === "website" ? (
+              <Field
+                id={`${formId}-profileWebsite`}
+                label="Website perusahaan"
+                error={errors.profileWebsite}
+              >
+                <Input
+                  id={`${formId}-profileWebsite`}
+                  name="profileWebsite"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
+                  placeholder="https://www.perusahaan.co.id"
+                  required
+                  aria-required="true"
+                  aria-invalid={errors.profileWebsite ? true : undefined}
+                  aria-describedby={
+                    errors.profileWebsite
+                      ? `${formId}-profileWebsite-error`
+                      : undefined
+                  }
+                  value={values.profileWebsite}
+                  onChange={(event) =>
+                    update("profileWebsite", event.target.value)
+                  }
+                  className="min-h-11"
+                />
+              </Field>
+            ) : null}
+          </fieldset>
         </CardContent>
       </Card>
 
@@ -375,6 +549,37 @@ export function CompanyRegisterForm() {
             error={errors.hasCsrOrGrant}
             onChange={(value) => update("hasCsrOrGrant", value)}
           />
+          <Field
+            id={`${formId}-inclusionMessage`}
+            label="Pesan yang ingin disampaikan"
+            error={errors.inclusionMessage}
+            required={false}
+          >
+            <textarea
+              id={`${formId}-inclusionMessage`}
+              name="inclusionMessage"
+              rows={4}
+              maxLength={MAX_INCLUSION_MESSAGE_LENGTH}
+              aria-invalid={errors.inclusionMessage ? true : undefined}
+              aria-describedby={
+                errors.inclusionMessage
+                  ? `${formId}-inclusionMessage-error`
+                  : `${formId}-inclusionMessage-hint`
+              }
+              value={values.inclusionMessage}
+              onChange={(event) =>
+                update("inclusionMessage", event.target.value)
+              }
+              className={`${fieldClassName} py-2`}
+              placeholder="Tuliskan harapan, catatan, atau pesan lain untuk tim Inklusia"
+            />
+            <p
+              id={`${formId}-inclusionMessage-hint`}
+              className="text-muted-foreground text-sm"
+            >
+              Maksimal {MAX_INCLUSION_MESSAGE_LENGTH.toLocaleString("id-ID")} karakter.
+            </p>
+          </Field>
         </CardContent>
       </Card>
 
@@ -476,21 +681,29 @@ function Field({
   id,
   label,
   error,
+  required = true,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id} className="text-sm">
         {label}{" "}
-        <span aria-hidden="true" className="text-destructive">
-          *
-        </span>
-        <span className="sr-only"> (wajib)</span>
+        {required ? (
+          <>
+            <span aria-hidden="true" className="text-destructive">
+              *
+            </span>
+            <span className="sr-only"> (wajib)</span>
+          </>
+        ) : (
+          <span className="text-muted-foreground font-normal"> (opsional)</span>
+        )}
       </Label>
       {children}
       {error ? (
