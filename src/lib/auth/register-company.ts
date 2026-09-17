@@ -1,11 +1,21 @@
+import {
+  isValidCompanyWebsite,
+  validateCompanyProfileFile,
+} from "@/lib/auth/company-profile-document";
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const MAX_INCLUSION_MESSAGE_LENGTH = 2000;
 
 export type YesNoAnswer = "ya" | "tidak";
+export type CompanyProfileKind = "file" | "website";
 
 export type RegisterCompanyFormValues = {
   name: string;
   address: string;
   industry: string;
+  profileKind: CompanyProfileKind | "";
+  profileWebsite: string;
+  profileFile: File | null;
   contactName: string;
   contactPosition: string;
   contactPhone: string;
@@ -17,6 +27,7 @@ export type RegisterCompanyFormValues = {
   neededSkills: string;
   disabilityHirePlan: string;
   hasCsrOrGrant: YesNoAnswer | "";
+  inclusionMessage: string;
 };
 
 export type RegisterCompanyFormErrors = Partial<
@@ -27,6 +38,9 @@ export const EMPTY_REGISTER_COMPANY_VALUES: RegisterCompanyFormValues = {
   name: "",
   address: "",
   industry: "",
+  profileKind: "",
+  profileWebsite: "",
+  profileFile: null,
   contactName: "",
   contactPosition: "",
   contactPhone: "",
@@ -38,6 +52,7 @@ export const EMPTY_REGISTER_COMPANY_VALUES: RegisterCompanyFormValues = {
   neededSkills: "",
   disabilityHirePlan: "",
   hasCsrOrGrant: "",
+  inclusionMessage: "",
 };
 
 export function validateRegisterCompanyForm(
@@ -58,6 +73,24 @@ export function validateRegisterCompanyForm(
 
   if (!values.industry.trim()) {
     errors.industry = "Industri wajib diisi.";
+  }
+
+  if (!values.profileKind) {
+    errors.profileKind =
+      "Pilih unggah berkas atau website untuk profil perusahaan.";
+  } else if (values.profileKind === "website") {
+    if (!values.profileWebsite.trim()) {
+      errors.profileWebsite = "Alamat website perusahaan wajib diisi.";
+    } else if (!isValidCompanyWebsite(values.profileWebsite)) {
+      errors.profileWebsite = "Format alamat website belum benar.";
+    }
+  } else if (!values.profileFile) {
+    errors.profileFile = "Unggah berkas profil perusahaan.";
+  } else {
+    const fileError = validateCompanyProfileFile(values.profileFile);
+    if (fileError) {
+      errors.profileFile = fileError;
+    }
   }
 
   if (!values.contactName.trim()) {
@@ -132,6 +165,10 @@ export function validateRegisterCompanyForm(
       "Pilih apakah perusahaan memiliki program CSR atau dana hibah pelatihan.";
   }
 
+  if (values.inclusionMessage.trim().length > MAX_INCLUSION_MESSAGE_LENGTH) {
+    errors.inclusionMessage = `Pesan maksimal ${MAX_INCLUSION_MESSAGE_LENGTH.toLocaleString("id-ID")} karakter.`;
+  }
+
   return errors;
 }
 
@@ -142,6 +179,9 @@ export function firstRegisterCompanyErrorField(
     "name",
     "address",
     "industry",
+    "profileKind",
+    "profileWebsite",
+    "profileFile",
     "contactName",
     "contactPosition",
     "contactPhone",
@@ -153,6 +193,7 @@ export function firstRegisterCompanyErrorField(
     "neededSkills",
     "disabilityHirePlan",
     "hasCsrOrGrant",
+    "inclusionMessage",
   ];
   return order.find((field) => errors[field]) ?? null;
 }
