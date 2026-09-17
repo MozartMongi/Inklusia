@@ -11,7 +11,8 @@ export type DisabilityFriendlyType =
   | "daksa"
   | "netra"
   | "autisme"
-  | "intelektual";
+  | "intelektual"
+  | "lainnya";
 
 export type CompanySummary = {
   id: string;
@@ -49,4 +50,5 @@ export const DISABILITY_FRIENDLY_LABEL: Record<DisabilityFriendlyType, string> =
     netra: "Ramah netra / low vision",
     autisme: "Ramah autisme / neurodiversitas",
     intelektual: "Ramah disabilitas intelektual",
+    lainnya: "Ramah disabilitas lainnya",
   };
