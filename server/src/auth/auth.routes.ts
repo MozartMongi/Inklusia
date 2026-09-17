@@ -32,6 +32,7 @@ import { currentUserId } from "../profiles/current-user.js";
 import {
   handleProfileImageUpload,
 } from "../profiles/photo-upload.js";
+import { handleCompanyProfileUpload } from "../companies/profile-document.js";
 import { saveProfileImage } from "../profiles/photo-storage.js";
 import {
   findProfileByUserId,
@@ -87,9 +88,16 @@ authRouter.post("/register/pencari-kerja", registerLimiter, async (req, res, nex
   }
 });
 
-authRouter.post("/register/perusahaan", registerLimiter, async (req, res, next) => {
+authRouter.post(
+  "/register/perusahaan",
+  registerLimiter,
+  handleCompanyProfileUpload,
+  async (req, res, next) => {
   try {
     const { values } = parseRegisterCompanyBody(req.body);
+    if (req.file) {
+      values.profileFileName = req.file.originalname;
+    }
     const errors = validateRegisterCompanyInput(values);
     if (Object.keys(errors).length > 0) {
       res.status(400).json({
@@ -102,6 +110,7 @@ authRouter.post("/register/perusahaan", registerLimiter, async (req, res, next) 
     if (
       !values.hasDisabilityEmployees ||
       !values.hasCsrOrGrant ||
+      !values.profileKind ||
       values.disabilityWorkersNeeded === null
     ) {
       res.status(400).json({
@@ -113,6 +122,7 @@ authRouter.post("/register/perusahaan", registerLimiter, async (req, res, next) 
 
     const result = await registerCompanyAccount({
       ...values,
+      profileKind: values.profileKind,
       hasDisabilityEmployees: values.hasDisabilityEmployees,
       hasCsrOrGrant: values.hasCsrOrGrant,
       disabilityWorkersNeeded: values.disabilityWorkersNeeded,
@@ -120,6 +130,13 @@ authRouter.post("/register/perusahaan", registerLimiter, async (req, res, next) 
         values.hasDisabilityEmployees === "tidak"
           ? values.disabilityHirePlan
           : null,
+      profileFile: req.file
+        ? {
+            originalName: req.file.originalname,
+            mimeType: req.file.mimetype,
+            buffer: req.file.buffer,
+          }
+        : null,
     });
 
     if ("conflict" in result) {
