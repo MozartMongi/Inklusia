@@ -1,4 +1,4 @@
-import { ApiError, apiGet, apiSend, isApiError, isUnavailableError } from "@/lib/api/http";
+import { ApiError, apiGet, apiSend, apiUpload, isApiError, isUnavailableError } from "@/lib/api/http";
 import type {
   RegisterSeekerCertificationDraft,
   RegisterSeekerExperienceDraft,
@@ -33,6 +33,9 @@ export type RegisterCompanyInput = {
   name: string;
   address: string;
   industry: string;
+  profileKind: "file" | "website";
+  profileWebsite: string;
+  profileFile: File | null;
   contactName: string;
   contactPosition: string;
   contactPhone: string;
@@ -43,6 +46,7 @@ export type RegisterCompanyInput = {
   neededSkills: string;
   disabilityHirePlan: string | null;
   hasCsrOrGrant: "ya" | "tidak";
+  inclusionMessage: string;
 };
 
 export type LoginInput = {
@@ -101,11 +105,40 @@ export async function registerCompany(
   input: RegisterCompanyInput,
 ): Promise<{ data: AuthUserPayload } | { error: string; errors?: ApiError["errors"] }> {
   try {
-    const data = await apiSend<AuthUserPayload>(
-      "/api/auth/register/perusahaan",
-      "POST",
-      input,
-    );
+    const path = "/api/auth/register/perusahaan";
+    const payload = {
+      name: input.name,
+      address: input.address,
+      industry: input.industry,
+      profileKind: input.profileKind,
+      profileWebsite: input.profileWebsite,
+      contactName: input.contactName,
+      contactPosition: input.contactPosition,
+      contactPhone: input.contactPhone,
+      contactEmail: input.contactEmail,
+      password: input.password,
+      hasDisabilityEmployees: input.hasDisabilityEmployees,
+      disabilityWorkersNeeded: input.disabilityWorkersNeeded,
+      neededSkills: input.neededSkills,
+      disabilityHirePlan: input.disabilityHirePlan,
+      hasCsrOrGrant: input.hasCsrOrGrant,
+      inclusionMessage: input.inclusionMessage,
+    };
+
+    if (input.profileKind === "file" && input.profileFile) {
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(payload)) {
+        if (value === null) {
+          continue;
+        }
+        formData.append(key, String(value));
+      }
+      formData.append("profileFile", input.profileFile);
+      const data = await apiUpload<AuthUserPayload>(path, formData);
+      return { data };
+    }
+
+    const data = await apiSend<AuthUserPayload>(path, "POST", payload);
     return { data };
   } catch (error) {
     if (isApiError(error)) {
