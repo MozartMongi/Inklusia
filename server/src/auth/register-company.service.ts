@@ -1,10 +1,20 @@
+import { saveCompanyProfileFile } from "../companies/profile-document.js";
 import { pool } from "../db/pool.js";
 import { hashPassword } from "./password.js";
-import type { RegisterCompanyInput } from "./register-company.js";
+import {
+  normalizeCompanyWebsite,
+  type RegisterCompanyInput,
+} from "./register-company.js";
 import { findUserByEmail, type AuthUser } from "./users.repository.js";
 
 export async function registerCompanyAccount(
-  input: RegisterCompanyInput,
+  input: RegisterCompanyInput & {
+    profileFile?: {
+      originalName: string;
+      mimeType: string;
+      buffer: Buffer;
+    } | null;
+  },
 ): Promise<{ user: AuthUser } | { conflict: true }> {
   const email = input.contactEmail.trim().toLowerCase();
   const existing = await findUserByEmail(email);
@@ -27,12 +37,18 @@ export async function registerCompanyAccount(
       INSERT INTO users (email, password_hash, role)
       VALUES ($1, $2, 'company')
       RETURNING id, email, role, is_root_admin
-      `,
+    `,
       [email, passwordHash],
     );
     const userRow = userResult.rows[0];
 
-    await client.query(
+    const profileWebsite =
+      input.profileKind === "website"
+        ? normalizeCompanyWebsite(input.profileWebsite)
+        : "";
+    const inclusionMessage = input.inclusionMessage.trim();
+
+    const profileResult = await client.query<{ id: string }>(
       `
       INSERT INTO company_profiles (
         user_id,
@@ -48,11 +64,17 @@ export async function registerCompanyAccount(
         disability_workers_needed,
         needed_skills,
         disability_hire_plan,
-        has_csr_or_grant
+        has_csr_or_grant,
+        profile_kind,
+        profile_website,
+        profile_file_name,
+        profile_file_path,
+        inclusion_message
       )
       VALUES (
-        $1, $2, $3, $4, '', $5, $6, $7, $8, $9, $10, $11, $12, $13
+        $1, $2, $3, $4, '', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
       )
+      RETURNING id
       `,
       [
         userRow.id,
@@ -70,8 +92,30 @@ export async function registerCompanyAccount(
           ? (input.disabilityHirePlan ?? "").trim()
           : "",
         input.hasCsrOrGrant === "ya",
+        input.profileKind,
+        profileWebsite,
+        "",
+        "",
+        inclusionMessage,
       ],
     );
+
+    if (input.profileKind === "file" && input.profileFile) {
+      const saved = await saveCompanyProfileFile({
+        companyId: profileResult.rows[0].id,
+        originalName: input.profileFile.originalName,
+        mimeType: input.profileFile.mimeType,
+        buffer: input.profileFile.buffer,
+      });
+      await client.query(
+        `
+        UPDATE company_profiles
+        SET profile_file_name = $2, profile_file_path = $3, updated_at = NOW()
+        WHERE id = $1
+        `,
+        [profileResult.rows[0].id, saved.fileName, saved.filePath],
+      );
+    }
 
     await client.query("COMMIT");
 
