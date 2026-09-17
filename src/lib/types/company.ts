@@ -12,6 +12,7 @@ export type CompanyProfile = {
   industry: string;
   nib: string;
   contactPerson: CompanyContactPerson;
+  inclusionMessage: string;
   updatedAt: string;
 };
 
