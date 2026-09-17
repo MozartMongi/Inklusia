@@ -6,7 +6,12 @@ const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 function apiBaseUrl(): string {
   const configured = process.env.API_BASE_URL?.trim().replace(/\/$/, "");
   if (configured) {
-    return configured;
+    if (/^https?:\/\//i.test(configured)) {
+      return configured;
+    }
+    return configured.startsWith("localhost") || configured.startsWith("127.")
+      ? `http://${configured}`
+      : `https://${configured}`;
   }
   if (process.env.NODE_ENV === "production") {
     throw new Error("API_BASE_URL wajib disetel di lingkungan production.");
