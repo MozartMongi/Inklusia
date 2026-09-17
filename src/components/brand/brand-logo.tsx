@@ -21,7 +21,7 @@ export function BrandLogo({
       width={BRAND_LOGO.width}
       height={BRAND_LOGO.height}
       priority={priority}
-      className={cn("h-10 w-auto mix-blend-multiply sm:h-12 md:h-14", className)}
+      className={cn("h-10 w-auto sm:h-12 md:h-14", className)}
     />
   );
 }
