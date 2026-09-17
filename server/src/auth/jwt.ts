@@ -55,6 +55,14 @@ export function verifyAccessToken(token: string): { userId: string } | null {
   }
 
   const [header, payload, signature] = parts;
+
+  // Tolak token yang mengaku memakai algoritma lain (mis. "none")
+  // sebelum tanda tangan ikut diperiksa.
+  const head = decodeJson<{ alg?: unknown; typ?: unknown }>(header);
+  if (head?.alg !== "HS256" || head.typ !== "JWT") {
+    return null;
+  }
+
   const data = `${header}.${payload}`;
   if (!signaturesMatch(signature, signPayload(data))) {
     return null;
