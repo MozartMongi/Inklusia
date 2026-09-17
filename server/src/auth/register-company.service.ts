@@ -79,6 +79,7 @@ export async function registerCompanyAccount(
       user: {
         id: userRow.id,
         email: userRow.email,
+        fullName: input.contactName.trim(),
         role: "company",
         isRootAdmin: userRow.is_root_admin,
         status: "aktif",
