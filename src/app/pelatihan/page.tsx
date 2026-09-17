@@ -1,55 +1,63 @@
-import { SignOutButton } from "@/components/auth/sign-out-button";
-import { CompanyProfileView } from "@/components/company/company-profile-view";
 import {
   PageActionLink,
   PageActions,
 } from "@/components/layout/page-action-link";
-import { fetchMyCompanyProfile } from "@/lib/api/company";
+import { TrainingList } from "@/components/trainings/training-list";
+import { fetchTrainings } from "@/lib/api/trainings";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Ruang perusahaan",
+  title: "Pelatihan keahlian",
   description:
-    "Lihat data perusahaan, NIB, dan kontak person yang dipakai admin untuk penyaluran kandidat.",
+    "Daftar pelatihan untuk menambah keahlian yang dicari perusahaan inklusif.",
 };
 
-export default async function CompanySpacePage() {
-  const profile = await fetchMyCompanyProfile();
+export default async function TrainingsPage() {
+  const { trainings, unavailable } = await fetchTrainings();
 
   return (
     <main
       id="konten-utama"
       tabIndex={-1}
-      className="mx-auto w-full max-w-3xl flex-1 scroll-mt-24 px-4 py-8 focus-visible:outline-none sm:px-6 sm:py-10"
+      className="mx-auto w-full max-w-6xl flex-1 scroll-mt-24 px-4 py-8 focus-visible:outline-none sm:px-6 sm:py-10"
     >
-      <header className="mb-8">
+      <header className="mb-8 max-w-3xl">
         <p className="text-primary mb-2 text-sm font-semibold tracking-wide uppercase">
-          Ruang perusahaan
+          Peningkatan keahlian
         </p>
-        <h1 className="text-foreground text-3xl font-semibold tracking-tight">
-          Profil perusahaan
+        <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
+          Pelatihan keahlian
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
-          Data perusahaan {profile.name}. Perusahaan tidak menerima lamaran
-          langsung; admin yang menyalurkan kandidat.
+          Ikuti pelatihan untuk memperkuat keterampilan yang sering dicari
+          perusahaan inklusif.
         </p>
         <PageActions>
-          <PageActionLink href="/perusahaan/edit">
-            Edit profil perusahaan
+          <PageActionLink href="/pelatihan/saya">
+            Lihat pelatihan saya
           </PageActionLink>
-          <PageActionLink href="/perusahaan/kebutuhan">
-            Daftar inquiry karyawan
+          <PageActionLink href="/profil" tone="back">
+            Kembali ke profil
           </PageActionLink>
-          <PageActionLink href="/perusahaan/kebutuhan/baru" variant="default">
-            Buat inquiry karyawan
-          </PageActionLink>
-          <PageActionLink href="/perusahaan/kandidat">
-            Lihat kandidat tersalur
-          </PageActionLink>
-          <SignOutButton variant="page" />
         </PageActions>
       </header>
-      <CompanyProfileView profile={profile} />
+
+      <section aria-labelledby="daftar-pelatihan-heading">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
+          <h2
+            id="daftar-pelatihan-heading"
+            className="text-foreground text-xl font-semibold"
+          >
+            Daftar pelatihan
+          </h2>
+          <p className="text-muted-foreground text-sm" aria-live="polite">
+            {unavailable
+              ? "Data pelatihan belum dapat dimuat"
+              : `${trainings.length} pelatihan ditampilkan`}
+          </p>
+        </div>
+        <TrainingList trainings={trainings} unavailable={unavailable} />
+      </section>
     </main>
   );
 }
