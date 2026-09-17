@@ -4,6 +4,7 @@ export const JOB_SEEKER_DISABILITY_TYPES = [
   "netra",
   "autisme",
   "intelektual",
+  "lainnya",
 ] as const;
 
 export type JobSeekerDisabilityType =
@@ -18,6 +19,7 @@ export const JOB_SEEKER_DISABILITY_LABEL: Record<
   netra: "Netra / low vision",
   autisme: "Autisme / neurodiversitas",
   intelektual: "Disabilitas intelektual",
+  lainnya: "Disabilitas lainnya",
 };
 
 export const JOB_SEEKER_DISABILITY_OPTIONS = JOB_SEEKER_DISABILITY_TYPES.map(
