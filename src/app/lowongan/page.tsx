@@ -2,8 +2,8 @@ import { JobList } from "@/components/jobs/job-list";
 import { JobSearchForm } from "@/components/jobs/job-search-form";
 import { RegisterCta } from "@/components/jobs/register-cta";
 import { PageActionLink } from "@/components/layout/page-action-link";
-import { fetchActiveJobs, fetchJobs } from "@/lib/api/jobs";
-import { uniqueJobLocations } from "@/lib/jobs/filters";
+import { fetchJobFilterOptions, fetchJobs } from "@/lib/api/jobs";
+import { hasActiveFilters } from "@/lib/jobs/filters";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,11 +18,12 @@ type JobsPageProps = {
 
 export default async function JobsPage({ searchParams }: JobsPageProps) {
   const params = await searchParams;
-  const [{ jobs, filters }, allJobs] = await Promise.all([
+  const [{ jobs, filters, unavailable }, filterOptions] = await Promise.all([
     fetchJobs(params),
-    fetchActiveJobs(),
+    fetchJobFilterOptions(),
   ]);
-  const locations = uniqueJobLocations(allJobs);
+  const locations = filterOptions.lokasi;
+  const filtered = hasActiveFilters(filters);
 
   return (
     <main
@@ -39,8 +40,8 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
         </h1>
         <p className="text-muted-foreground mt-3 text-base leading-7">
           Jelajahi kesempatan dari perusahaan yang membuka ruang bagi
-          penyandang disabilitas. Lengkapi profil nanti agar admin dapat
-          menyalurkan Anda ke lowongan yang sesuai.
+          penyandang disabilitas. Lowongan tampil setelah kebutuhan perusahaan
+          disetujui admin. Lengkapi profil agar admin dapat menyalurkan Anda.
         </p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <RegisterCta className="inline-flex max-w-full" />
@@ -62,17 +63,13 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             aria-live="polite"
             className="text-muted-foreground scroll-mt-24 rounded-sm text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring"
           >
-            {jobs.length} lowongan ditampilkan
-            {filters.q ||
-            filters.disabilitas ||
-            filters.lokasi ||
-            filters.jenis
-              ? " sesuai pencarian atau saringan"
-              : ""}
+            {unavailable
+              ? "Data lowongan belum dapat dimuat"
+              : `${jobs.length} lowongan ditampilkan${filtered ? " sesuai pencarian atau saringan" : ""}`}
           </p>
         </div>
         <JobSearchForm filters={filters} locations={locations} />
-        <JobList jobs={jobs} />
+        <JobList jobs={jobs} hasFilters={filtered} unavailable={unavailable} />
       </section>
     </main>
   );
