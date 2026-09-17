@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import { requireAuth, requireCompany } from "../auth/middleware.js";
-import { isInquiryStatus } from "../db/inquiry-schema.js";
 import { currentUserId } from "../profiles/current-user.js";
 import {
   findCompanyByUserId,
@@ -10,6 +9,7 @@ import {
 } from "./companies.repository.js";
 import {
   createCompanyInquiry,
+  findCompanyInquiryForCompany,
   listCompanyInquiries,
   updateCompanyInquiryForCompany,
   updateCompanyInquiryStatusForCompany,
@@ -78,6 +78,29 @@ async function updateCompanyProfileHandler(
 
 meCompanyRouter.put("/", updateCompanyProfileHandler);
 meCompanyRouter.patch("/", updateCompanyProfileHandler);
+
+meCompanyRouter.get("/inquiries/:id", async (req, res, next) => {
+  try {
+    const company = await findCompanyByUserId(currentUserId(req));
+    if (!company) {
+      res.status(404).json({ error: "Profil perusahaan tidak ditemukan." });
+      return;
+    }
+
+    const inquiry = await findCompanyInquiryForCompany(
+      company.id,
+      req.params.id,
+    );
+    if (!inquiry) {
+      res.status(404).json({ error: "Inquiry tidak ditemukan." });
+      return;
+    }
+
+    res.json({ data: inquiry });
+  } catch (error) {
+    next(error);
+  }
+});
 
 meCompanyRouter.get("/inquiries", async (req, res, next) => {
   try {
@@ -189,10 +212,15 @@ meCompanyRouter.patch("/inquiries/:id/status", async (req, res, next) => {
         ? (req.body as Record<string, unknown>)
         : {};
     const statusRaw = typeof body.status === "string" ? body.status : "";
-    if (!isInquiryStatus(statusRaw)) {
+    // Perusahaan hanya boleh menutup atau mengirim ulang untuk ditinjau;
+    // status "disetujui"/"ditolak" adalah keputusan admin.
+    if (statusRaw !== "menunggu" && statusRaw !== "ditutup") {
       res.status(400).json({
-        error: "Status inquiry tidak valid.",
-        errors: { status: "Status harus terbuka atau ditutup." },
+        error: "Status kebutuhan tidak valid.",
+        errors: {
+          status:
+            "Status hanya bisa diubah menjadi 'ditutup' atau dikirim ulang sebagai 'menunggu'.",
+        },
       });
       return;
     }
