@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
+import { appBaseUrl } from "../config/env.js";
 import { pool } from "../db/pool.js";
-import { hashPassword } from "./password.js";
+import { sendMail } from "../mail/mailer.js";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, hashPassword } from "./password.js";
 import { findUserByEmail, updateUserPasswordHash } from "./users.repository.js";
 
 const RESET_TTL_MS = 60 * 60 * 1000;
@@ -11,7 +13,7 @@ function hashToken(token: string): string {
 
 export async function requestPasswordReset(
   email: string,
-): Promise<{ sent: true; debugToken?: string }> {
+): Promise<{ sent: true }> {
   const user = await findUserByEmail(email);
   // Respons seragam: selalu sukses agar email tidak terbongkar.
   if (!user) {
@@ -22,6 +24,16 @@ export async function requestPasswordReset(
   const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + RESET_TTL_MS);
 
+  // Token lama yang belum dipakai dibatalkan agar hanya satu tautan aktif.
+  await pool.query(
+    `
+    UPDATE password_reset_tokens
+    SET used_at = NOW()
+    WHERE user_id = $1 AND used_at IS NULL
+    `,
+    [user.id],
+  );
+
   await pool.query(
     `
     INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
@@ -30,15 +42,28 @@ export async function requestPasswordReset(
     [user.id, tokenHash, expiresAt.toISOString()],
   );
 
-  // Belum ada layanan email: token dicatat di log lokal untuk uji manual.
-  console.info(
-    `[password-reset] token untuk ${user.email} (berlaku 1 jam): ${token}`,
-  );
+  const resetUrl = `${appBaseUrl}/masuk/reset-kata-sandi?token=${token}`;
+  await sendMail({
+    to: user.email,
+    subject: "Atur ulang kata sandi Inklusia",
+    text: [
+      "Halo,",
+      "",
+      "Kami menerima permintaan untuk mengatur ulang kata sandi akun Inklusia Anda.",
+      "Buka tautan berikut untuk membuat kata sandi baru (berlaku 1 jam):",
+      resetUrl,
+      "",
+      "Jika Anda tidak meminta hal ini, abaikan email ini. Kata sandi Anda tidak berubah.",
+    ].join("\n"),
+    html: [
+      "<p>Halo,</p>",
+      "<p>Kami menerima permintaan untuk mengatur ulang kata sandi akun Inklusia Anda.</p>",
+      `<p><a href="${resetUrl}">Buat kata sandi baru</a> (tautan berlaku 1 jam).</p>`,
+      "<p>Jika Anda tidak meminta hal ini, abaikan email ini. Kata sandi Anda tidak berubah.</p>",
+    ].join(""),
+  });
 
-  return {
-    sent: true,
-    debugToken: process.env.NODE_ENV === "production" ? undefined : token,
-  };
+  return { sent: true };
 }
 
 export async function confirmPasswordReset(input: {
@@ -49,8 +74,11 @@ export async function confirmPasswordReset(input: {
   if (!token) {
     return { error: "Tautan reset tidak valid atau sudah kedaluwarsa." };
   }
-  if (!input.password || input.password.length < 8) {
-    return { error: "Kata sandi baru minimal 8 karakter." };
+  if (!input.password || input.password.length < MIN_PASSWORD_LENGTH) {
+    return { error: `Kata sandi baru minimal ${MIN_PASSWORD_LENGTH} karakter.` };
+  }
+  if (input.password.length > MAX_PASSWORD_LENGTH) {
+    return { error: `Kata sandi baru maksimal ${MAX_PASSWORD_LENGTH} karakter.` };
   }
 
   const tokenHash = hashToken(token);
