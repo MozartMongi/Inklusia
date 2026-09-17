@@ -144,6 +144,7 @@ export async function findAdminCompanyProfile(
       contact_person_position,
       contact_person_phone,
       contact_person_email,
+      inclusion_message,
       created_at,
       updated_at
     FROM company_profiles
