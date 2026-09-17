@@ -5,6 +5,7 @@ export const DISABILITY_FRIENDLY_TYPES = [
   "netra",
   "autisme",
   "intelektual",
+  "lainnya",
 ] as const;
 
 export const JOB_TYPES = [
@@ -26,6 +27,7 @@ export const DISABILITY_FRIENDLY_LABEL: Record<DisabilityFriendlyType, string> =
     netra: "Ramah netra / low vision",
     autisme: "Ramah autisme / neurodiversitas",
     intelektual: "Ramah disabilitas intelektual",
+    lainnya: "Ramah disabilitas lainnya",
   };
 
 export const JOB_TYPE_LABEL: Record<JobType, string> = {
