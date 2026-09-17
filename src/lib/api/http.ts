@@ -87,7 +87,7 @@ export async function rawApiFetch(
 }
 
 export function isUnavailableError(error: unknown): boolean {
-  return isApiError(error) && (error.status === 502 || error.status === 503);
+  return isApiError(error) && error.status >= 500;
 }
 
 function errorFromBody(status: number, body: unknown): ApiError {
