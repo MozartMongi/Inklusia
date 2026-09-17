@@ -8,6 +8,7 @@ import {
 import type { DisabilityFriendlyType, JobType } from "../db/jobs-schema.js";
 import { isUuid } from "../db/ids.js";
 import { pool } from "../db/pool.js";
+import { withdrawJobForInquiry } from "../jobs/job-publication.js";
 
 export type CreateInquiryInput = {
   title: string;
@@ -19,22 +20,25 @@ export type CreateInquiryInput = {
   headcount: number;
 };
 
-const INQUIRY_SELECT = `
-  SELECT
-    id,
-    company_id,
-    title,
-    description,
-    requirements,
-    location,
-    job_type,
-    disability_friendly_type,
-    headcount,
-    status,
-    created_at,
-    updated_at
-  FROM company_inquiries
+const INQUIRY_COLUMNS = `
+  id,
+  company_id,
+  title,
+  description,
+  requirements,
+  location,
+  job_type,
+  disability_friendly_type,
+  headcount,
+  status,
+  review_note,
+  reviewed_at,
+  submitted_at,
+  created_at,
+  updated_at
 `;
+
+const INQUIRY_SELECT = `SELECT ${INQUIRY_COLUMNS} FROM company_inquiries`;
 
 export async function createCompanyInquiry(
   companyId: string,
@@ -44,6 +48,7 @@ export async function createCompanyInquiry(
     return null;
   }
 
+  // Kebutuhan baru selalu masuk antrean tinjauan admin, tidak langsung tayang.
   const { rows } = await pool.query<CompanyInquiryRow>(
     `
     INSERT INTO company_inquiries (
@@ -55,22 +60,11 @@ export async function createCompanyInquiry(
       job_type,
       disability_friendly_type,
       headcount,
-      status
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'terbuka')
-    RETURNING
-      id,
-      company_id,
-      title,
-      description,
-      requirements,
-      location,
-      job_type,
-      disability_friendly_type,
-      headcount,
       status,
-      created_at,
-      updated_at
+      submitted_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'menunggu', NOW())
+    RETURNING ${INQUIRY_COLUMNS}
     `,
     [
       companyId,
@@ -128,6 +122,11 @@ export async function findCompanyInquiryForCompany(
   return row ? mapCompanyInquiryRow(row) : null;
 }
 
+/**
+ * Perubahan isi oleh perusahaan mengembalikan kebutuhan ke antrean tinjauan
+ * dan mencabut lowongan yang sudah tayang, supaya konten yang tampil di publik
+ * selalu versi yang pernah disetujui admin.
+ */
 export async function updateCompanyInquiryForCompany(
   companyId: string,
   inquiryId: string,
@@ -137,83 +136,109 @@ export async function updateCompanyInquiryForCompany(
     return null;
   }
 
-  const { rows } = await pool.query<CompanyInquiryRow>(
-    `
-    UPDATE company_inquiries
-    SET
-      title = $3,
-      description = $4,
-      requirements = $5,
-      location = $6,
-      job_type = $7,
-      disability_friendly_type = $8,
-      headcount = $9,
-      updated_at = NOW()
-    WHERE company_id = $1 AND id = $2
-    RETURNING
-      id,
-      company_id,
-      title,
-      description,
-      requirements,
-      location,
-      job_type,
-      disability_friendly_type,
-      headcount,
-      status,
-      created_at,
-      updated_at
-    `,
-    [
-      companyId,
-      inquiryId,
-      input.title.trim(),
-      input.description.trim(),
-      input.requirements.trim(),
-      input.location.trim(),
-      input.jobType,
-      input.disabilityFriendlyType,
-      input.headcount,
-    ],
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  const row = rows[0];
-  return row ? mapCompanyInquiryRow(row) : null;
+    const { rows } = await client.query<CompanyInquiryRow>(
+      `
+      UPDATE company_inquiries
+      SET
+        title = $3,
+        description = $4,
+        requirements = $5,
+        location = $6,
+        job_type = $7,
+        disability_friendly_type = $8,
+        headcount = $9,
+        status = 'menunggu',
+        review_note = '',
+        reviewed_at = NULL,
+        reviewed_by = NULL,
+        submitted_at = NOW(),
+        updated_at = NOW()
+      WHERE company_id = $1 AND id = $2 AND status <> 'ditutup'
+      RETURNING ${INQUIRY_COLUMNS}
+      `,
+      [
+        companyId,
+        inquiryId,
+        input.title.trim(),
+        input.description.trim(),
+        input.requirements.trim(),
+        input.location.trim(),
+        input.jobType,
+        input.disabilityFriendlyType,
+        input.headcount,
+      ],
+    );
+
+    const row = rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    await withdrawJobForInquiry(client, inquiryId);
+    await client.query("COMMIT");
+    return mapCompanyInquiryRow(row);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
+/**
+ * Perusahaan hanya boleh menutup kebutuhan atau mengirimkannya ulang
+ * untuk ditinjau. Menyetujui kebutuhan adalah wewenang admin.
+ */
 export async function updateCompanyInquiryStatusForCompany(
   companyId: string,
   inquiryId: string,
-  status: "terbuka" | "ditutup",
+  status: "menunggu" | "ditutup",
 ): Promise<CompanyInquiry | null> {
   if (!isUuid(companyId) || !isUuid(inquiryId)) {
     return null;
   }
 
-  const { rows } = await pool.query<CompanyInquiryRow>(
-    `
-    UPDATE company_inquiries
-    SET status = $3, updated_at = NOW()
-    WHERE company_id = $1 AND id = $2
-    RETURNING
-      id,
-      company_id,
-      title,
-      description,
-      requirements,
-      location,
-      job_type,
-      disability_friendly_type,
-      headcount,
-      status,
-      created_at,
-      updated_at
-    `,
-    [companyId, inquiryId, status],
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  const row = rows[0];
-  return row ? mapCompanyInquiryRow(row) : null;
+    const { rows } = await client.query<CompanyInquiryRow>(
+      `
+      UPDATE company_inquiries
+      SET
+        status = $3,
+        review_note = CASE WHEN $3 = 'menunggu' THEN '' ELSE review_note END,
+        reviewed_at = CASE WHEN $3 = 'menunggu' THEN NULL ELSE reviewed_at END,
+        reviewed_by = CASE WHEN $3 = 'menunggu' THEN NULL ELSE reviewed_by END,
+        submitted_at = CASE WHEN $3 = 'menunggu' THEN NOW() ELSE submitted_at END,
+        updated_at = NOW()
+      WHERE company_id = $1 AND id = $2
+      RETURNING ${INQUIRY_COLUMNS}
+      `,
+      [companyId, inquiryId, status],
+    );
+
+    const row = rows[0];
+    if (!row) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+
+    // Ditutup maupun dikirim ulang sama-sama mencabut lowongan dari publik.
+    await withdrawJobForInquiry(client, inquiryId);
+    await client.query("COMMIT");
+    return mapCompanyInquiryRow(row);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export { isInquiryDisabilityFriendlyType, isInquiryJobType };
