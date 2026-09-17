@@ -347,7 +347,7 @@ export function HomeLanding() {
           id="kesaksian-heading"
           className="text-foreground max-w-3xl text-2xl font-semibold tracking-tight sm:text-3xl"
         >
-          Yang ingin diwujudkan bersama pencari kerja dan perusahaan
+          Langkah Awal Memulai di Inklusia.id
         </h2>
         <ul className="mt-10 grid list-none grid-cols-1 gap-4 p-0 lg:grid-cols-3">
           {TESTIMONIALS.map((item) => (
