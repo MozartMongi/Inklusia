@@ -206,18 +206,35 @@ export function HomeLanding() {
             Setiap lowongan dan kandidat melalui proses yang sama: dilengkapi,
             ditinjau, lalu disalurkan. Tidak ada lamaran langsung ke perusahaan.
           </p>
-          <ul className="mt-10 grid list-none grid-cols-2 gap-6 p-0 sm:grid-cols-4">
-            {IMPACT_STATS.map((stat) => (
-              <li key={stat.label}>
-                <p className="text-3xl font-semibold tabular-nums sm:text-4xl">
-                  {stat.value}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-primary-foreground/90 sm:text-base">
-                  {stat.label}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <ol className="mt-10 flex list-none flex-col gap-0 p-0 sm:flex-row sm:items-stretch">
+            {IMPACT_STATS.map((stat, index) => {
+              const isLast = index === IMPACT_STATS.length - 1;
+              return (
+                <li
+                  key={stat.label}
+                  className="relative flex flex-1 flex-col sm:flex-row sm:items-center"
+                >
+                  <div className="border-primary-foreground/40 flex h-full min-h-36 flex-1 flex-col justify-center rounded-xl border px-4 py-5 sm:min-h-40 sm:px-5">
+                    <p className="text-xs font-semibold tracking-wide text-primary-foreground/75 uppercase">
+                      Langkah {index + 1}
+                    </p>
+                    <p className="mt-2 text-xl font-semibold">
+                      {stat.value}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-primary-foreground/90 sm:text-base">
+                      {stat.label}
+                    </p>
+                  </div>
+                  {!isLast ? (
+                    <span
+                      aria-hidden="true"
+                      className="bg-primary-foreground/45 mx-auto my-1 h-6 w-0.5 shrink-0 sm:mx-1 sm:my-0 sm:h-0.5 sm:w-6 lg:mx-2 lg:w-8"
+                    />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 
