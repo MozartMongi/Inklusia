@@ -9,7 +9,7 @@ export function SiteFooter() {
             perusahaan inklusif.
           </p>
         </div>
-        <div className="flex flex-col items-end text-right">
+        <div className="flex flex-col items-start text-left sm:items-end sm:text-right">
           <p className="text-foreground font-medium">Hubungi kami</p>
           <a
             href="mailto:info@inklusia.id"
@@ -17,6 +17,11 @@ export function SiteFooter() {
           >
             info@inklusia.id
           </a>
+          <p className="mt-2 max-w-sm leading-relaxed">
+            AXA Tower, Kuningan city, Axa Tower Lt.37 , Jl. Prof. DR. Satrio,
+            RT.14/RW.4, Kuningan, Karet Kuningan, Kecamatan Setiabudi, Kota
+            Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12940
+          </p>
         </div>
       </div>
     </footer>
