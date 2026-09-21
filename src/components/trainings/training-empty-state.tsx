@@ -19,12 +19,12 @@ export function TrainingEmptyState({
         <p className="text-foreground text-base font-medium">
           {unavailable
             ? "Data pelatihan sedang tidak dapat ditampilkan"
-            : "Katalog pelatihan masih kosong"}
+            : "Belum ada pelatihan yang tersedia"}
         </p>
         <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-6">
           {unavailable
             ? "Layanan data sedang tidak tersedia. Muat ulang halaman ini beberapa saat lagi."
-            : "Belum ada pelatihan yang dapat ditampilkan saat ini. Periksa lagi nanti, atau kembali ke profil untuk melanjutkan persiapan kerja."}
+            : "Saat ini belum ada pelatihan yang dibuka. Silakan periksa kembali nanti, atau lanjutkan melengkapi profil Anda sambil menunggu jadwal pelatihan berikutnya."}
         </p>
         <p className="mt-5">
           <PageActionLink href="/profil" tone="back">
