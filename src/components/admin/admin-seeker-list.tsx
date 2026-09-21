@@ -1,3 +1,4 @@
+import { AdminDeleteUserButton } from "@/components/admin/admin-delete-user-button";
 import { SeekerSearchForm } from "@/components/placements/seeker-search-form";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -64,20 +65,29 @@ export function AdminSeekerList({
             <li key={seeker.id} className="min-w-0">
               <Card className="relative h-full overflow-visible">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold">
-                    <h3 className="text-lg leading-snug font-semibold">
-                      <Link
-                        href={`/admin/pencari-kerja/${seeker.id}`}
-                        className="focus-visible:ring-ring after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:ring-3 focus-visible:outline-none"
-                      >
-                        {seeker.fullName}
-                      </Link>
-                    </h3>
-                  </CardTitle>
-                  <CardDescription>
-                    {seeker.city} · kelengkapan profil{" "}
-                    {seeker.profileCompleteness}%
-                  </CardDescription>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg font-semibold">
+                        <h3 className="text-lg leading-snug font-semibold">
+                          <Link
+                            href={`/admin/pencari-kerja/${seeker.id}`}
+                            className="focus-visible:ring-ring after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:ring-3 focus-visible:outline-none"
+                          >
+                            {seeker.fullName}
+                          </Link>
+                        </h3>
+                      </CardTitle>
+                      <CardDescription>
+                        {seeker.city} · kelengkapan profil{" "}
+                        {seeker.profileCompleteness}%
+                      </CardDescription>
+                    </div>
+                    <AdminDeleteUserButton
+                      id={seeker.id}
+                      entityName={seeker.fullName}
+                      entityLabel="pencari kerja"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   <Badge variant="secondary">
