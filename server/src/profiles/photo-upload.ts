@@ -27,6 +27,11 @@ const upload = multer({
 
 export const profileImageUpload = upload.single("file");
 
+const registerSeekerImageUpload = upload.fields([
+  { name: "photo", maxCount: 1 },
+  { name: "ktp", maxCount: 1 },
+]);
+
 export function imageExtension(mimeType: string): string {
   if (mimeType === "image/png") {
     return "png";
@@ -62,3 +67,46 @@ export const handleProfileImageUpload: RequestHandler = (req, res, next) => {
     next(error);
   });
 };
+
+export const handleRegisterSeekerImageUpload: RequestHandler = (
+  req,
+  res,
+  next,
+) => {
+  const contentType = req.headers["content-type"] ?? "";
+  if (!contentType.includes("multipart/form-data")) {
+    next();
+    return;
+  }
+
+  registerSeekerImageUpload(req, res, (error) => {
+    const message = multerErrorMessage(error);
+    if (message) {
+      res.status(400).json({
+        error: message,
+        errors: { photoFileName: message, ktpFileName: message },
+      });
+      return;
+    }
+    next(error);
+  });
+};
+
+export function registerSeekerUploadedFiles(req: {
+  files?:
+    | Express.Multer.File[]
+    | { [fieldname: string]: Express.Multer.File[] }
+    | undefined;
+}): {
+  photo: Express.Multer.File | null;
+  ktp: Express.Multer.File | null;
+} {
+  const files = req.files;
+  if (!files || Array.isArray(files)) {
+    return { photo: null, ktp: null };
+  }
+  return {
+    photo: files.photo?.[0] ?? null,
+    ktp: files.ktp?.[0] ?? null,
+  };
+}
