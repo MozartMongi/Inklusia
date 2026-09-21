@@ -1,6 +1,7 @@
 import { pool } from "../db/pool.js";
 import { isUuid } from "../db/ids.js";
 import type {
+  JobSeekerCertificationRow,
   JobSeekerDisabilityType,
   JobSeekerExperienceRow,
   JobSeekerPhotoRow,
@@ -22,6 +23,7 @@ const PROFILE_SELECT = `
     p.phone,
     p.address,
     p.disability_type,
+    p.disability_notes,
     p.bio,
     p.created_at,
     p.updated_at,
@@ -31,11 +33,20 @@ const PROFILE_SELECT = `
 `;
 
 async function loadRelated(profileId: string) {
-  const [skills, experiences, photos] = await Promise.all([
+  const [skills, certifications, experiences, photos] = await Promise.all([
     pool.query<JobSeekerSkillRow>(
       `
       SELECT id, profile_id, skill_name, level, created_at
       FROM job_seeker_skills
+      WHERE profile_id = $1
+      ORDER BY created_at ASC
+      `,
+      [profileId],
+    ),
+    pool.query<JobSeekerCertificationRow>(
+      `
+      SELECT id, profile_id, name, issuer, year, created_at
+      FROM job_seeker_certifications
       WHERE profile_id = $1
       ORDER BY created_at ASC
       `,
@@ -62,6 +73,7 @@ async function loadRelated(profileId: string) {
 
   return {
     skills: skills.rows,
+    certifications: certifications.rows,
     experiences: experiences.rows,
     photos: photos.rows,
   };
@@ -76,6 +88,7 @@ function toDto(
     profile,
     email,
     skills: related.skills,
+    certifications: related.certifications,
     experiences: related.experiences,
     photos: related.photos,
   });
@@ -152,6 +165,7 @@ export async function updateProfileIdentity(
       p.phone,
       p.address,
       p.disability_type,
+      p.disability_notes,
       p.bio,
       p.created_at,
       p.updated_at,
