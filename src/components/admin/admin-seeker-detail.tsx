@@ -86,7 +86,7 @@ export function AdminSeekerDetail({ profile }: AdminSeekerDetailProps) {
           </CardHeader>
           <CardContent>
             <p className="text-foreground text-base leading-7">
-              {profile.disabilityNotes.trim()
+              {(profile.disabilityNotes ?? "").trim()
                 ? profile.disabilityNotes
                 : "Belum ada keterangan disabilitas."}
             </p>
@@ -105,7 +105,9 @@ export function AdminSeekerDetail({ profile }: AdminSeekerDetailProps) {
           </CardHeader>
           <CardContent>
             <p className="text-foreground text-base leading-7">
-              {profile.bio.trim() ? profile.bio : "Belum ada ringkasan diri."}
+              {(profile.bio ?? "").trim()
+                ? profile.bio
+                : "Belum ada ringkasan diri."}
             </p>
           </CardContent>
         </Card>
@@ -178,13 +180,13 @@ export function AdminSeekerDetail({ profile }: AdminSeekerDetailProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {profile.certifications.length === 0 ? (
+            {(profile.certifications ?? []).length === 0 ? (
               <p className="text-muted-foreground text-sm">
                 Belum ada sertifikasi yang tercatat.
               </p>
             ) : (
               <ul className="flex flex-col gap-2 p-0">
-                {profile.certifications.map((certification) => (
+                {(profile.certifications ?? []).map((certification) => (
                   <li
                     key={certification.id}
                     className="border-border rounded-lg border px-3 py-2 text-sm"
