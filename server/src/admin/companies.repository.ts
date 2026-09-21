@@ -124,6 +124,27 @@ export async function uniqueAdminCompanyFacets(): Promise<{
   };
 }
 
+/** Hapus akun perusahaan lewat id profil; CASCADE membersihkan data terkait. */
+export async function deleteAdminCompanyByProfileId(
+  profileId: string,
+): Promise<boolean> {
+  if (!isUuid(profileId)) {
+    return false;
+  }
+
+  const { rowCount } = await pool.query(
+    `
+    DELETE FROM users u
+    USING company_profiles c
+    WHERE c.id = $1
+      AND c.user_id = u.id
+      AND u.role = 'company'
+    `,
+    [profileId],
+  );
+  return (rowCount ?? 0) > 0;
+}
+
 export async function findAdminCompanyProfile(
   id: string,
 ): Promise<(CompanyProfile & { inquiries: unknown[] }) | null> {
