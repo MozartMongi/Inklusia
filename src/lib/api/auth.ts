@@ -15,8 +15,8 @@ export type RegisterJobSeekerInput = {
   address: string;
   disabilityType: JobSeekerDisabilityType;
   disabilityNotes: string;
-  photoFileName: string;
-  ktpFileName: string;
+  photoFile: File;
+  ktpFile: File;
   skills: Array<Pick<RegisterSeekerSkillDraft, "skillName" | "level">>;
   certifications: Array<
     Pick<RegisterSeekerCertificationDraft, "name" | "issuer" | "year">
@@ -87,10 +87,25 @@ export async function registerJobSeeker(
   input: RegisterJobSeekerInput,
 ): Promise<{ data: AuthUserPayload } | { error: string; errors?: ApiError["errors"] }> {
   try {
-    const data = await apiSend<AuthUserPayload>(
+    const formData = new FormData();
+    formData.append("fullName", input.fullName);
+    formData.append("email", input.email);
+    formData.append("password", input.password);
+    formData.append("phone", input.phone);
+    formData.append("address", input.address);
+    formData.append("disabilityType", input.disabilityType);
+    formData.append("disabilityNotes", input.disabilityNotes);
+    formData.append("photoFileName", input.photoFile.name);
+    formData.append("ktpFileName", input.ktpFile.name);
+    formData.append("skills", JSON.stringify(input.skills));
+    formData.append("certifications", JSON.stringify(input.certifications));
+    formData.append("experiences", JSON.stringify(input.experiences));
+    formData.append("photo", input.photoFile);
+    formData.append("ktp", input.ktpFile);
+
+    const data = await apiUpload<AuthUserPayload>(
       "/api/auth/register/pencari-kerja",
-      "POST",
-      input,
+      formData,
     );
     return { data };
   } catch (error) {
