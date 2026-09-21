@@ -6,6 +6,7 @@ import {
   findProfileByUserId,
 } from "../profiles/profiles.repository.js";
 import {
+  deleteAdminSeekerByProfileId,
   listAdminSeekers,
   parseAdminSeekerFilters,
   uniqueAdminSeekerCities,
@@ -46,6 +47,26 @@ adminSeekersRouter.get("/:id", async (req, res, next) => {
     }
 
     res.json({ data: profile });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminSeekersRouter.delete("/:id", async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!isUuid(id)) {
+      res.status(404).json({ error: "Profil pencari kerja tidak ditemukan." });
+      return;
+    }
+
+    const deleted = await deleteAdminSeekerByProfileId(id);
+    if (!deleted) {
+      res.status(404).json({ error: "Profil pencari kerja tidak ditemukan." });
+      return;
+    }
+
+    res.json({ data: { id, deleted: true } });
   } catch (error) {
     next(error);
   }
