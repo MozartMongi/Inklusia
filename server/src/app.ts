@@ -8,6 +8,7 @@ import { adminInquiriesRouter } from "./admin/inquiries.routes.js";
 import { adminPenyaluranRouter } from "./admin/penyaluran.routes.js";
 import { adminSeekersRouter } from "./admin/seekers.routes.js";
 import { adminSummaryRouter } from "./admin/summary.routes.js";
+import { adminTrainingsRouter } from "./admin/trainings.routes.js";
 import { authRouter } from "./auth/auth.routes.js";
 import { companiesRouter } from "./companies/companies.routes.js";
 import { meCompanyRouter } from "./companies/me.routes.js";
@@ -94,6 +95,7 @@ app.use("/api/admin/perusahaan", adminCompaniesRouter);
 app.use("/api/admin/kebutuhan", adminInquiriesRouter);
 app.use("/api/admin/akun", adminAccountsRouter);
 app.use("/api/admin/penyaluran", adminPenyaluranRouter);
+app.use("/api/admin/pelatihan", adminTrainingsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
