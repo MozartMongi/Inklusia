@@ -83,3 +83,12 @@ export type JobSeekerPhotoRow = {
   created_at: Date;
   updated_at: Date;
 };
+
+export type JobSeekerCertificationRow = {
+  id: string;
+  profile_id: string;
+  name: string;
+  issuer: string;
+  year: string;
+  created_at: Date;
+};
