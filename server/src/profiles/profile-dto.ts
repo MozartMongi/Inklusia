@@ -1,4 +1,5 @@
 import type {
+  JobSeekerCertificationRow,
   JobSeekerDisabilityType,
   JobSeekerExperienceRow,
   JobSeekerPhotoRow,
@@ -15,6 +16,7 @@ export type JobSeekerProfileDto = {
   photoUrl: string | null;
   ktpPhotoUrl: string | null;
   disabilityType: JobSeekerDisabilityType;
+  disabilityNotes: string;
   address: string;
   phone: string;
   bio: string;
@@ -23,6 +25,12 @@ export type JobSeekerProfileDto = {
     id: string;
     skillName: string;
     level: SkillLevel;
+  }>;
+  certifications: Array<{
+    id: string;
+    name: string;
+    issuer: string;
+    year: string;
   }>;
   experiences: Array<{
     id: string;
@@ -45,17 +53,27 @@ function isoDate(value: Date | string): string {
   return `${year}-${month}-${day}`;
 }
 
+function usablePhotoUrl(url: string | null | undefined): string | null {
+  if (!url || url.startsWith("pending://")) {
+    return null;
+  }
+  return url;
+}
+
 export function mapJobSeekerProfile(input: {
   profile: JobSeekerProfileRow;
   email: string;
   skills: JobSeekerSkillRow[];
+  certifications: JobSeekerCertificationRow[];
   experiences: JobSeekerExperienceRow[];
   photos: JobSeekerPhotoRow[];
 }): JobSeekerProfileDto {
-  const photoUrl =
-    input.photos.find((photo) => photo.kind === "photo")?.url ?? null;
-  const ktpPhotoUrl =
-    input.photos.find((photo) => photo.kind === "ktp")?.url ?? null;
+  const photoUrl = usablePhotoUrl(
+    input.photos.find((photo) => photo.kind === "photo")?.url,
+  );
+  const ktpPhotoUrl = usablePhotoUrl(
+    input.photos.find((photo) => photo.kind === "ktp")?.url,
+  );
 
   return {
     id: input.profile.id,
@@ -65,6 +83,7 @@ export function mapJobSeekerProfile(input: {
     photoUrl,
     ktpPhotoUrl,
     disabilityType: input.profile.disability_type,
+    disabilityNotes: input.profile.disability_notes ?? "",
     address: input.profile.address,
     phone: input.profile.phone,
     bio: input.profile.bio,
@@ -73,6 +92,12 @@ export function mapJobSeekerProfile(input: {
       id: skill.id,
       skillName: skill.skill_name,
       level: skill.level,
+    })),
+    certifications: input.certifications.map((certification) => ({
+      id: certification.id,
+      name: certification.name,
+      issuer: certification.issuer,
+      year: certification.year,
     })),
     experiences: input.experiences.map((experience) => ({
       id: experience.id,
