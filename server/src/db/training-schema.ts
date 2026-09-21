@@ -1,6 +1,6 @@
 /**
  * Skema TypeScript untuk tabel `trainings` dan `training_enrollments`
- * (migrasi 015_create_trainings.sql).
+ * (migrasi 015_create_trainings.sql, 019_trainings_ends_at.sql).
  */
 
 export const TRAINING_FORMATS = ["daring", "luring", "hybrid"] as const;
@@ -15,6 +15,14 @@ export const TRAINING_ENROLLMENT_STATUSES = [
 export type TrainingEnrollmentStatus =
   (typeof TRAINING_ENROLLMENT_STATUSES)[number];
 
+export const TRAINING_SCHEDULE_STATUSES = [
+  "akan_datang",
+  "berlangsung",
+  "berakhir",
+] as const;
+export type TrainingScheduleStatus =
+  (typeof TRAINING_SCHEDULE_STATUSES)[number];
+
 export type TrainingRow = {
   id: string;
   title: string;
@@ -26,6 +34,7 @@ export type TrainingRow = {
   skill_tags: string[];
   accessibility_notes: string;
   starts_at: Date;
+  ends_at: Date;
   seats_total: number;
   seats_left: number;
   is_published: boolean;
@@ -55,6 +64,7 @@ export type Training = {
   skillTags: string[];
   accessibilityNotes: string;
   startsAt: string;
+  endsAt: string;
   seatsLeft: number;
 };
 
@@ -64,6 +74,20 @@ export type TrainingEnrollment = {
   status: TrainingEnrollmentStatus;
   enrolledAt: string;
 };
+
+export function computeTrainingScheduleStatus(
+  startsAt: Date,
+  endsAt: Date,
+  now: Date = new Date(),
+): TrainingScheduleStatus {
+  if (now < startsAt) {
+    return "akan_datang";
+  }
+  if (now > endsAt) {
+    return "berakhir";
+  }
+  return "berlangsung";
+}
 
 export function mapTrainingRow(row: TrainingRow): Training {
   return {
@@ -77,6 +101,7 @@ export function mapTrainingRow(row: TrainingRow): Training {
     skillTags: row.skill_tags ?? [],
     accessibilityNotes: row.accessibility_notes,
     startsAt: row.starts_at.toISOString(),
+    endsAt: row.ends_at.toISOString(),
     seatsLeft: row.seats_left,
   };
 }
