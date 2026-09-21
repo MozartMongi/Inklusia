@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import { pool } from "../db/pool.js";
+import { saveProfileImage } from "../profiles/photo-storage.js";
 import { hashPassword } from "./password.js";
 import { findUserByEmail, type AuthUser } from "./users.repository.js";
 import type {
@@ -61,28 +62,37 @@ export async function registerJobSeekerAccount(
     await insertCertifications(client, profileId, input.certifications);
     await insertExperiences(client, profileId, input.experiences);
 
-    if (input.photoFileName.trim()) {
-      await client.query(
-        `
-        INSERT INTO job_seeker_photos (profile_id, kind, url)
-        VALUES ($1, 'photo', $2)
-        ON CONFLICT (profile_id, kind) DO UPDATE SET
-          url = EXCLUDED.url,
-          updated_at = NOW()
-        `,
-        [profileId, `pending://${input.photoFileName.trim()}`],
+    if (input.photoFile) {
+      const url = await saveProfileImage({
+        profileId,
+        kind: "photo",
+        mimeType: input.photoFile.mimeType,
+        buffer: input.photoFile.buffer,
+      });
+      await upsertPhoto(client, profileId, "photo", url);
+    } else if (input.photoFileName.trim()) {
+      await upsertPhoto(
+        client,
+        profileId,
+        "photo",
+        `pending://${input.photoFileName.trim()}`,
       );
     }
-    if (input.ktpFileName.trim()) {
-      await client.query(
-        `
-        INSERT INTO job_seeker_photos (profile_id, kind, url)
-        VALUES ($1, 'ktp', $2)
-        ON CONFLICT (profile_id, kind) DO UPDATE SET
-          url = EXCLUDED.url,
-          updated_at = NOW()
-        `,
-        [profileId, `pending://${input.ktpFileName.trim()}`],
+
+    if (input.ktpFile) {
+      const url = await saveProfileImage({
+        profileId,
+        kind: "ktp",
+        mimeType: input.ktpFile.mimeType,
+        buffer: input.ktpFile.buffer,
+      });
+      await upsertPhoto(client, profileId, "ktp", url);
+    } else if (input.ktpFileName.trim()) {
+      await upsertPhoto(
+        client,
+        profileId,
+        "ktp",
+        `pending://${input.ktpFileName.trim()}`,
       );
     }
 
@@ -104,6 +114,24 @@ export async function registerJobSeekerAccount(
   } finally {
     client.release();
   }
+}
+
+async function upsertPhoto(
+  client: PoolClient,
+  profileId: string,
+  kind: "photo" | "ktp",
+  url: string,
+) {
+  await client.query(
+    `
+    INSERT INTO job_seeker_photos (profile_id, kind, url)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (profile_id, kind) DO UPDATE SET
+      url = EXCLUDED.url,
+      updated_at = NOW()
+    `,
+    [profileId, kind, url],
+  );
 }
 
 async function insertSkills(
