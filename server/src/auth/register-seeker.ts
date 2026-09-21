@@ -24,6 +24,12 @@ export type RegisterSeekerExperienceInput = {
   description: string;
 };
 
+export type RegisterSeekerImageFile = {
+  originalName: string;
+  mimeType: string;
+  buffer: Buffer;
+};
+
 export type RegisterSeekerInput = {
   fullName: string;
   email: string;
@@ -34,6 +40,8 @@ export type RegisterSeekerInput = {
   disabilityNotes: string;
   photoFileName: string;
   ktpFileName: string;
+  photoFile?: RegisterSeekerImageFile | null;
+  ktpFile?: RegisterSeekerImageFile | null;
   skills: RegisterSeekerSkillInput[];
   certifications: RegisterSeekerCertificationInput[];
   experiences: RegisterSeekerExperienceInput[];
@@ -88,11 +96,26 @@ export function parseRegisterSeekerBody(body: unknown): {
         typeof source.photoFileName === "string" ? source.photoFileName : "",
       ktpFileName:
         typeof source.ktpFileName === "string" ? source.ktpFileName : "",
-      skills: parseSkills(source.skills),
-      certifications: parseCertifications(source.certifications),
-      experiences: parseExperiences(source.experiences),
+      skills: parseSkills(parseMaybeJson(source.skills)),
+      certifications: parseCertifications(parseMaybeJson(source.certifications)),
+      experiences: parseExperiences(parseMaybeJson(source.experiences)),
     },
   };
+}
+
+function parseMaybeJson(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return value;
+  }
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    return value;
+  }
 }
 
 export function validateRegisterSeekerInput(values: {
