@@ -15,7 +15,7 @@ import { pool } from "./pool.js";
 if (isProduction && process.env.ALLOW_DEMO_SEED !== "true") {
   throw new Error(
     "Seed data contoh tidak boleh dijalankan di production. " +
-      "Gunakan `npm run seed:root-admin` dan `npm run seed:trainings`.",
+      "Gunakan `npm run seed:root-admin`.",
   );
 }
 
