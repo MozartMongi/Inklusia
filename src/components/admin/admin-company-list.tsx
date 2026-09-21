@@ -1,3 +1,4 @@
+import { AdminDeleteUserButton } from "@/components/admin/admin-delete-user-button";
 import { CompanySearchForm } from "@/components/admin/company-search-form";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,25 +67,34 @@ export function AdminCompanyList({
             <li key={company.id} className="min-w-0">
               <Card className="relative h-full overflow-visible">
                 <CardHeader>
-                  <CardTitle className="text-lg font-semibold">
-                    <h3 className="text-lg leading-snug font-semibold">
-                      <Link
-                        href={`/admin/perusahaan/${company.id}`}
-                        className="focus-visible:ring-ring after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:ring-3 focus-visible:outline-none"
-                      >
-                        {company.name}
-                      </Link>
-                    </h3>
-                  </CardTitle>
-                  <CardDescription>
-                    {company.city} · {company.industry}
-                  </CardDescription>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg font-semibold">
+                        <h3 className="text-lg leading-snug font-semibold">
+                          <Link
+                            href={`/admin/perusahaan/${company.id}`}
+                            className="focus-visible:ring-ring after:absolute after:inset-0 after:rounded-xl hover:underline focus-visible:ring-3 focus-visible:outline-none"
+                          >
+                            {company.name}
+                          </Link>
+                        </h3>
+                      </CardTitle>
+                      <CardDescription>
+                        {company.city} · {company.industry}
+                      </CardDescription>
+                    </div>
+                    <AdminDeleteUserButton
+                      id={company.id}
+                      entityName={company.name}
+                      entityLabel="perusahaan"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   <Badge variant="secondary">
                     {company.openInquiryCount > 0
-                    ? `${company.openInquiryCount} lowongan tayang`
-                    : "Belum ada lowongan tayang"}
+                      ? `${company.openInquiryCount} lowongan tayang`
+                      : "Belum ada lowongan tayang"}
                   </Badge>
                   <p className="text-muted-foreground text-sm leading-6">
                     {company.address}
