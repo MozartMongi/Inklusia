@@ -1,3 +1,4 @@
+import { isUuid } from "../db/ids.js";
 import { pool } from "../db/pool.js";
 import {
   JOB_SEEKER_DISABILITY_TYPES,
@@ -148,4 +149,25 @@ export async function uniqueAdminSeekerCities(): Promise<string[]> {
   return [...new Set(seekers.map((seeker) => seeker.city))].sort((a, b) =>
     a.localeCompare(b, "id"),
   );
+}
+
+/** Hapus akun pencari kerja lewat id profil; CASCADE membersihkan data terkait. */
+export async function deleteAdminSeekerByProfileId(
+  profileId: string,
+): Promise<boolean> {
+  if (!isUuid(profileId)) {
+    return false;
+  }
+
+  const { rowCount } = await pool.query(
+    `
+    DELETE FROM users u
+    USING job_seeker_profiles p
+    WHERE p.id = $1
+      AND p.user_id = u.id
+      AND u.role = 'job_seeker'
+    `,
+    [profileId],
+  );
+  return (rowCount ?? 0) > 0;
 }
