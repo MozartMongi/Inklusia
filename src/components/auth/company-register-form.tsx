@@ -27,7 +27,7 @@ import {
   type RegisterCompanyFormValues,
   type YesNoAnswer,
 } from "@/lib/auth/register-company";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
 const fieldClassName =
@@ -48,11 +48,11 @@ function focusField(
 
 export function CompanyRegisterForm() {
   const formId = useId();
+  const router = useRouter();
   const [values, setValues] = useState<RegisterCompanyFormValues>(
     EMPTY_REGISTER_COMPANY_VALUES,
   );
   const [errors, setErrors] = useState<RegisterCompanyFormErrors>({});
-  const [status, setStatus] = useState<"idle" | "saved">("idle");
 
   function update<K extends keyof RegisterCompanyFormValues>(
     field: K,
@@ -71,7 +71,6 @@ export function CompanyRegisterForm() {
       }
       return next;
     });
-    setStatus("idle");
     setErrors((current) => {
       const next = { ...current, [field]: undefined };
       if (field === "hasDisabilityEmployees" && value === "ya") {
@@ -88,7 +87,6 @@ export function CompanyRegisterForm() {
   }
 
   function handleProfileFile(file: File | undefined) {
-    setStatus("idle");
     if (!file) {
       update("profileFile", null);
       return;
@@ -148,7 +146,8 @@ export function CompanyRegisterForm() {
       focusField(formId, errorField);
       return;
     }
-    setStatus("saved");
+    router.push("/masuk");
+    router.refresh();
   }
 
   return (
@@ -647,32 +646,15 @@ export function CompanyRegisterForm() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button
-          type="submit"
-          className={buttonVariants({
-            size: "lg",
-            className: "min-h-11 px-4",
-          })}
-        >
-          Daftar sebagai perusahaan
-        </button>
-        <p role="status" aria-live="polite" className="text-foreground text-sm">
-          {status === "saved" ? (
-            <>
-              Pendaftaran berhasil.{" "}
-              <Link
-                href="/masuk"
-                className="text-primary font-medium underline underline-offset-4"
-              >
-                Lanjut ke halaman masuk
-              </Link>
-            </>
-          ) : (
-            ""
-          )}
-        </p>
-      </div>
+      <button
+        type="submit"
+        className={buttonVariants({
+          size: "lg",
+          className: "min-h-11 px-4",
+        })}
+      >
+        Daftar sebagai perusahaan
+      </button>
     </form>
   );
 }
