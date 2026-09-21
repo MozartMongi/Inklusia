@@ -6,6 +6,10 @@ import type { AdminCompanySummary, CompanyProfile } from "@/lib/types/company";
 import type { AdminInquiry, CompanyInquiry } from "@/lib/types/inquiry";
 import type { JobSeekerProfile } from "@/lib/types/job-seeker";
 import type { JobSeekerSummary } from "@/lib/types/placement";
+import type {
+  AdminTraining,
+  AdminTrainingDetail,
+} from "@/lib/types/training";
 
 export type AdminDashboardSummary = {
   seekerCount: number;
@@ -205,6 +209,59 @@ export async function setAdminAccountStatus(
     }
     if (isApiError(error)) {
       return { error: error.message };
+    }
+    throw error;
+  }
+}
+
+export async function fetchAdminTrainings(): Promise<AdminTraining[]> {
+  return apiGet<AdminTraining[]>("/api/admin/pelatihan");
+}
+
+export async function fetchAdminTraining(
+  id: string,
+): Promise<AdminTrainingDetail | null> {
+  try {
+    return await apiGet<AdminTrainingDetail>(`/api/admin/pelatihan/${id}`);
+  } catch (error) {
+    if (isApiError(error) && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export type CreateAdminTrainingInput = {
+  title: string;
+  summary: string;
+  description: string;
+  provider: string;
+  format: AdminTraining["format"];
+  durationLabel: string;
+  skillTags: string[];
+  accessibilityNotes: string;
+  startsAt: string;
+  endsAt: string;
+  seatsTotal: number;
+  isPublished: boolean;
+};
+
+export async function createAdminTraining(
+  input: CreateAdminTrainingInput,
+): Promise<
+  | { data: AdminTraining }
+  | { error: string; errors?: Record<string, string | undefined> }
+> {
+  try {
+    const data = await apiSend<AdminTraining>(
+      "/api/admin/pelatihan",
+      "POST",
+      input,
+    );
+    return { data };
+  } catch (error) {
+    if (isApiError(error)) {
+      return { error: error.message, errors: error.errors };
     }
     throw error;
   }
