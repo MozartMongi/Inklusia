@@ -63,6 +63,26 @@ export async function fetchAdminJobSeekerProfile(
   }
 }
 
+export async function deleteAdminJobSeeker(
+  id: string,
+): Promise<{ data: { id: string; deleted: true } } | { error: string } | null> {
+  try {
+    const data = await apiSend<{ id: string; deleted: true }>(
+      `/api/admin/pencari-kerja/${id}`,
+      "DELETE",
+    );
+    return { data };
+  } catch (error) {
+    if (isApiError(error) && error.status === 404) {
+      return null;
+    }
+    if (isApiError(error)) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+}
+
 export async function fetchAdminCompanyDirectory(
   searchParams: Record<string, string | string[] | undefined> = {},
 ): Promise<AdminCompanyDirectory> {
@@ -84,6 +104,26 @@ export async function fetchAdminCompanyProfile(
   } catch (error) {
     if (isApiError(error) && error.status === 404) {
       return null;
+    }
+    throw error;
+  }
+}
+
+export async function deleteAdminCompany(
+  id: string,
+): Promise<{ data: { id: string; deleted: true } } | { error: string } | null> {
+  try {
+    const data = await apiSend<{ id: string; deleted: true }>(
+      `/api/admin/perusahaan/${id}`,
+      "DELETE",
+    );
+    return { data };
+  } catch (error) {
+    if (isApiError(error) && error.status === 404) {
+      return null;
+    }
+    if (isApiError(error)) {
+      return { error: error.message };
     }
     throw error;
   }
