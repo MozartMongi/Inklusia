@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   Building2,
   ClipboardCheck,
+  GraduationCap,
   LayoutDashboard,
   ListChecks,
   Shield,
@@ -55,6 +56,12 @@ const NAV_ITEMS = [
     icon: ListChecks,
     match: (pathname: string) =>
       pathname.startsWith("/admin/penyaluran/riwayat"),
+  },
+  {
+    href: "/admin/pelatihan",
+    label: "Pelatihan",
+    icon: GraduationCap,
+    match: (pathname: string) => pathname.startsWith("/admin/pelatihan"),
   },
   {
     href: "/admin/akun",
