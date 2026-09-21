@@ -31,6 +31,8 @@ import {
 import { currentUserId } from "../profiles/current-user.js";
 import {
   handleProfileImageUpload,
+  handleRegisterSeekerImageUpload,
+  registerSeekerUploadedFiles,
 } from "../profiles/photo-upload.js";
 import { handleCompanyProfileUpload } from "../companies/profile-document.js";
 import { saveProfileImage } from "../profiles/photo-storage.js";
@@ -43,10 +45,28 @@ import type { JobSeekerPhotoKind } from "../db/job-seeker-schema.js";
 
 export const authRouter = Router();
 
-authRouter.post("/register/pencari-kerja", registerLimiter, async (req, res, next) => {
+authRouter.post(
+  "/register/pencari-kerja",
+  registerLimiter,
+  handleRegisterSeekerImageUpload,
+  async (req, res, next) => {
   try {
     const { values } = parseRegisterSeekerBody(req.body);
+    const uploaded = registerSeekerUploadedFiles(req);
+    if (uploaded.photo) {
+      values.photoFileName = uploaded.photo.originalname;
+    }
+    if (uploaded.ktp) {
+      values.ktpFileName = uploaded.ktp.originalname;
+    }
+
     const errors = validateRegisterSeekerInput(values);
+    if (!uploaded.photo) {
+      errors.photoFileName = errors.photoFileName ?? "Foto diri wajib diunggah.";
+    }
+    if (!uploaded.ktp) {
+      errors.ktpFileName = errors.ktpFileName ?? "Foto KTP wajib diunggah.";
+    }
     if (Object.keys(errors).length > 0) {
       res.status(400).json({
         error: "Data pendaftaran pencari kerja belum lengkap.",
@@ -66,6 +86,20 @@ authRouter.post("/register/pencari-kerja", registerLimiter, async (req, res, nex
     const result = await registerJobSeekerAccount({
       ...values,
       disabilityType: values.disabilityType,
+      photoFile: uploaded.photo
+        ? {
+            originalName: uploaded.photo.originalname,
+            mimeType: uploaded.photo.mimetype,
+            buffer: uploaded.photo.buffer,
+          }
+        : null,
+      ktpFile: uploaded.ktp
+        ? {
+            originalName: uploaded.ktp.originalname,
+            mimeType: uploaded.ktp.mimetype,
+            buffer: uploaded.ktp.buffer,
+          }
+        : null,
     });
 
     if ("conflict" in result) {
