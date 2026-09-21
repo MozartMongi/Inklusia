@@ -33,7 +33,7 @@ import {
   type JobSeekerDisabilityType,
   type SkillLevel,
 } from "@/lib/types/job-seeker";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 
 const fieldClassName =
@@ -43,6 +43,7 @@ const SKILL_LEVELS = Object.keys(SKILL_LEVEL_LABEL) as SkillLevel[];
 
 export function JobSeekerRegisterForm() {
   const formId = useId();
+  const router = useRouter();
   const [values, setValues] = useState<RegisterSeekerFormValues>(
     EMPTY_REGISTER_SEEKER_VALUES,
   );
@@ -54,7 +55,8 @@ export function JobSeekerRegisterForm() {
     RegisterSeekerExperienceDraft[]
   >([]);
   const [errors, setErrors] = useState<RegisterSeekerFormErrors>({});
-  const [status, setStatus] = useState<"idle" | "saved">("idle");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [ktpFile, setKtpFile] = useState<File | null>(null);
   const [skillName, setSkillName] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("menengah");
   const [certificationName, setCertificationName] = useState("");
@@ -66,7 +68,6 @@ export function JobSeekerRegisterForm() {
     value: RegisterSeekerFormValues[K],
   ) {
     setValues((current) => ({ ...current, [field]: value }));
-    setStatus("idle");
     if (errors[field]) {
       setErrors((current) => ({ ...current, [field]: undefined }));
     }
@@ -76,7 +77,6 @@ export function JobSeekerRegisterForm() {
     field: "photoName" | "ktpName",
     file: File | undefined,
   ) {
-    setStatus("idle");
     if (!file) {
       return;
     }
@@ -84,6 +84,11 @@ export function JobSeekerRegisterForm() {
     if (imageError) {
       setErrors((current) => ({ ...current, [field]: imageError }));
       return;
+    }
+    if (field === "photoName") {
+      setPhotoFile(file);
+    } else {
+      setKtpFile(file);
     }
     update(field, file.name);
   }
@@ -204,6 +209,18 @@ export function JobSeekerRegisterForm() {
       return;
     }
 
+    if (!photoFile || !ktpFile) {
+      setErrors((current) => ({
+        ...current,
+        photoName: photoFile ? current.photoName : "Foto diri wajib diunggah.",
+        ktpName: ktpFile ? current.ktpName : "Foto KTP wajib diunggah.",
+      }));
+      document
+        .getElementById(`${formId}-${!photoFile ? "photoName" : "ktpName"}`)
+        ?.focus();
+      return;
+    }
+
     const result = await registerJobSeeker({
       fullName: values.fullName.trim(),
       email: values.email.trim(),
@@ -212,8 +229,8 @@ export function JobSeekerRegisterForm() {
       address: values.address.trim(),
       disabilityType: values.disabilityType as JobSeekerDisabilityType,
       disabilityNotes: values.disabilityNotes.trim(),
-      photoFileName: values.photoName,
-      ktpFileName: values.ktpName,
+      photoFile,
+      ktpFile,
       skills: skills.map(({ skillName: name, level }) => ({
         skillName: name,
         level,
@@ -232,14 +249,18 @@ export function JobSeekerRegisterForm() {
       })),
     });
     if ("error" in result) {
+      const apiErrors = result.errors ?? {};
       setErrors((current) => ({
         ...current,
-        email: result.errors?.email ?? result.error,
+        email: apiErrors.email ?? result.error,
+        photoName: apiErrors.photoFileName ?? current.photoName,
+        ktpName: apiErrors.ktpFileName ?? current.ktpName,
       }));
       document.getElementById(`${formId}-email`)?.focus();
       return;
     }
-    setStatus("saved");
+    router.push("/masuk");
+    router.refresh();
   }
 
   return (
@@ -905,36 +926,15 @@ export function JobSeekerRegisterForm() {
             ) : null}
           </fieldset>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button
-              type="submit"
-              className={buttonVariants({
-                size: "lg",
-                className: "min-h-11 px-4",
-              })}
-            >
-              Daftar sebagai pencari kerja
-            </button>
-            <p
-              role="status"
-              aria-live="polite"
-              className="text-foreground text-sm"
-            >
-              {status === "saved" ? (
-                <>
-                  Pendaftaran berhasil.{" "}
-                  <Link
-                    href="/masuk"
-                    className="text-primary font-medium underline underline-offset-4"
-                  >
-                    Lanjut ke halaman masuk
-                  </Link>
-                </>
-              ) : (
-                ""
-              )}
-            </p>
-          </div>
+          <button
+            type="submit"
+            className={buttonVariants({
+              size: "lg",
+              className: "min-h-11 px-4",
+            })}
+          >
+            Daftar sebagai pencari kerja
+          </button>
         </form>
       </CardContent>
     </Card>
